@@ -10,8 +10,6 @@ RUN apk update \
     && pip install --no-cache-dir -r requirements.txt \
     && mkdir ./config
 
-COPY .env ./.env
-
 COPY ./src/ ./
 COPY ./src/settings.py ./settings.py
 COPY ./src/ingestion.py ./ingestion.py
