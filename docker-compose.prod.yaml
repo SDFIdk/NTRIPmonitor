@@ -1,0 +1,89 @@
+version: "2.4"
+
+services:
+
+    timescaledb:
+        image: timescale/timescaledb:latest-pg14
+        env_file:
+            - .env
+        user: ${DB_USER}
+        environment:
+            - POSTGRES_PASSWORD=${DB_PASSWORD}
+            - POSTGRES_DB=${DB_NAME}
+            - TIMESCALEDB_TELEMETRY=off
+            - PGDATA=/var/lib/postgresql/data/pgdata
+            - TS_TUNE_NUM_CPUS=${DB_CPU}
+            - TS_TUNE_MEMORY=${DB_MEMORY}
+            - TS_TUNE_MAX_CONNS=400
+        ports:
+            - "5432:5432"
+        volumes:
+            - ./initdb/01-rtcm_packages.sql:/docker-entrypoint-initdb.d/01-rtcm_packages.sql
+            - ./initdb/02-coordinates.sql:/docker-entrypoint-initdb.d/02-coordinates.sql
+            - ./initdb/11-gps_observations.sql:/docker-entrypoint-initdb.d/11-gps_observations.sql
+            - ./initdb/12-glonass_observations.sql:/docker-entrypoint-initdb.d/12-glonass_observations.sql
+            - ./initdb/13-galileo_observations.sql:/docker-entrypoint-initdb.d/13-galileo_observations.sql
+            - ./initdb/14-beidou_observations.sql:/docker-entrypoint-initdb.d/14-beidou_observations.sql
+            - ./initdb/15-qzss_observations.sql:/docker-entrypoint-initdb.d/15-qzss_observations.sql
+            - ./initdb/16-sbas_observations.sql:/docker-entrypoint-initdb.d/16-sbas_observations.sql
+            - ./initdb/20-sourcetable_constants.sql:/docker-entrypoint-initdb.d/20-sourcetable_constants.sql
+            - ./initdb/30-connection_logger.sql:/docker-entrypoint-initdb.d/30-connection_logger.sql
+            - ./initdb/99-stored_procedures.sql:/docker-entrypoint-initdb.d/99-stored_procedures.sql
+            - ${NTRIP_DATAMOUNT}:/var/lib/postgresql/data
+        logging:
+            driver: "local"
+            options:
+                max-file: "10"
+                max-size: "10m"
+        restart: unless-stopped
+        networks:
+            - ntripmonitor
+
+
+
+    grafana:
+        image: grafana/grafana-oss:9.5.19
+        env_file:
+            - .env
+        environment:
+            - GF_SECURITY_ADMIN_USER=${GRAFANA_USER}
+            - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+            - GF_USERS_ALLOW_SIGN_UP=false
+        depends_on:
+            - timescaledb
+        ports:
+            - "18000:3000"
+        volumes:
+            - ./initgrafana:/etc/grafana/provisioning:ro
+        logging:
+            driver: "local"
+            options:
+                max-file: "10"
+                max-size: "10m"
+        restart: unless-stopped
+        networks:
+            - ntripmonitor
+
+    ingest:
+        image: ${NTRIP_DOCKER_REGISTRY}
+        env_file:
+            - .env
+        depends_on:
+            - timescaledb
+        logging:
+            driver: "local"
+            options:
+                max-file: "10"
+                max-size: "10m"
+        restart: unless-stopped
+        networks:
+            - ntripmonitor
+        deploy:
+            resources:
+                limits:
+                    cpus: '${INGEST_CPU}'
+                    memory: '${INGEST_MEMORY}'
+
+networks:
+    ntripmonitor:
+            

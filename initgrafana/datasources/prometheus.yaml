@@ -1,0 +1,15 @@
+# config file version
+apiVersion: 2
+
+# list of datasources that should be deleted from the database
+deleteDatasources:
+  - name: Prometheus
+    orgId: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    orgId: 1
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: False
