@@ -75,16 +75,15 @@ Documentation coming soon.
 Checklist for launching the monitor solution. 
 - Download the source code for the application from GitHub.
 - Extract source code to a directory of your choosing.
-- Create a new folder in the same directory and call it "NtripMonitorData". This will be used for data persistence across deployments.
 - Copy the .env.example, and rename the copy ".env".
-- Configure the .env file to your liking.
+- Configure the .env file to fit your setup.
 - Build the ingestion image using the Dockerfile.
-- Deploy the NTRIPmonitor network.
+- Deploy the NTRIPmonitor network with docker-compose.
 
 # Ingestion
 The Ingestion of the monitor solution is responsible for all functionality regarding reading, decoding and general handling of the datastreams. 
 ## Multi processing
-To enable the multiprocessing version of the monitor solution, set the variable MULTIPROCESSING_ACTIVE to True in the environment file. This enables the use of multiple cores.
+To enable the multiprocessing version of the monitor solution, set the variable `MULTIPROCESSING_ACTIVE` to True in the environment file. This enables the use of multiple cores.
 The number of cores the system will use is set in the environment file.
 ### Overview of multiprocessing variables
 - **MULTIPROCESSEING_ACTIVE**: BOOL: Whether to use multiprocessing or not.
@@ -95,11 +94,12 @@ The number of cores the system will use is set in the environment file.
 - **INGEST_CPU** - FLOAT: Number of CPU the application has access to. The application will not block other applications from using the allocated CPU's, but the application may, if required at times, use this amount of CPU's.
 - **INGEST_MEMORY** - INTEGER + GB : The amount of memory the application has access to. Similar to the CPU, the application will not block other applications from using the allocated memory, but the application may, if required at times, use this amount of memory.
 ### Multiprocessing - Reading processes
-For the multiprocessing function tree, we advise the reader to follow the function calls of the function **RunRTCMStreamTasks** in [src/ingestion.py](src/ingestion.py).
+For the multiprocessing function tree, we advise the reader to follow the function calls of the function `RunRTCMStreamTasks` in [src/ingestion.py](src/ingestion.py).
 The maximum number of reading processes spawned is controlled by the **MAX_READERS** multiprocessing environment variable, but the true resulting reading processes also depends on the amount of configured mountpoints. The mountpoints are split into equal sized chunks, as to strain each reader process equally. If the amount of mountpoints are less than the maximum allowed reader processes, a reader process will be dedicated to each mountpoint and the remainder reading processes will be killed.
 #### Process of the individual reading process
-Each reading process is fed a mountpoint chunk. As each reading process is spawned, a databaseHandler class with a connection pool to the database is created. Each reading process creates an asynchronous operation for each mountpoint in the mountpoint chunk. A watchdog process watching over the asynchronous operations are spawned in order to reboot any shut down asynchronous operations during run time. In each operation, a Ntripclient and RTCM3 class is created. In each asynchronous operation we listen and log all messages sent by the mountpoint, and append to the shared memory. A continous check is run for each mountpoint on their respective datastream each 0.05 seconds, and if the datastream has gone silent, e.g. no incoming messages for 0.05 seconds, the process acquires the CPU lock and appends the messages to the shared memory, for further processing in the connected decoder process. Each decoder process handles disconnects and reconnects to either the database or ntripcaster.
-Reading process in simple terms :
+Each reading process is fed a mountpoint chunk. As each reading process is spawned, a `databaseHandler` class with a connection pool to the database is created. Each reading process creates an asynchronous operation for each mountpoint in the mountpoint chunk. A watchdog process watching over the asynchronous operations are spawned in order to reboot any shut down asynchronous operations during run time. In each operation, instances of the classes `Ntripclient` and `RTCM3` class is created. In each asynchronous operation we listen and log all messages sent by the mountpoint, and append to the shared memory. A continuous check is run for each mountpoint on their respective datastream every 0.05 seconds. If the datastream has gone silent, e.g. no incoming messages for 0.05 seconds, the process acquires the CPU lock and appends the messages to the shared memory, for processing by the assigned decoder process.
+Each decoder process handles disconnects and reconnects to either the database or ntripcaster.
+Reading process in simple terms:
 - Reading process is spawned with a list of mountpoints
 - For each mountpoint in the list, an asynchronous operation is spawned.
 - - Each asynchronous operation connects to the mountpoint datastream
