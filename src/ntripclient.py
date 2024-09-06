@@ -504,7 +504,7 @@ class NtripClients:
                 receivedBytes = BitStream(rawLine[:-2])
                 logging.debug(f"Chunk {receivedBytes.length}:{length * 8}. ")
             else:
-                # logging.info(f"{self.ntripMountPoint}:Not chunked stream. count : {count}")
+                logging.debug(f"{self.ntripMountPoint}:Not chunked stream. count : {count}")
                 rawLine = await self.ntripReader.read(2048)
                 receivedBytes = BitStream(rawLine)
             # timeStamp = time()
@@ -548,6 +548,7 @@ class NtripClients:
                             f"{hex(calcCrc)} != {rtcmFrame[-24:]}."
                             f" Realigning!"
                         )
+        logging.debug(f"{self.ntripMountPoint}: Returning rtcmFrame: {type(rtcmFrame)} with timeStamp {timestampe}")
         return rtcmFrame, timeStamp
     
     
