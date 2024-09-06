@@ -495,6 +495,7 @@ class NtripClients:
                         f"Connection to {self.casterUrl} failed with: {error}"
                         "during data reception."
                     )
+
                 if rawLine[-2:] != b"\r\n":
                     logging.error(
                         f"{self.ntripMountPoint}:Chunk malformed. "
@@ -504,10 +505,11 @@ class NtripClients:
                 receivedBytes = BitStream(rawLine[:-2])
                 logging.debug(f"Chunk {receivedBytes.length}:{length * 8}. ")
             else:
-                # logging.info(f"{self.ntripMountPoint}:Not chunked stream. count : {count}")
+                logging.debug(f"{self.ntripMountPoint}: Stream not chunked.")
                 rawLine = await self.ntripReader.read(2048)
                 receivedBytes = BitStream(rawLine)
-            # timeStamp = time()
+                timeStamp = time()
+
             if self.ntripStreamChunked and receivedBytes.length != length * 8:
                 logging.error(
                     f"{self.ntripMountPoint}:Chunk incomplete "
