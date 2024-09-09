@@ -551,6 +551,7 @@ class NtripClients:
                     if calcCrc == frameCrc[0]:
                         self.rtcmFrameAligned = True
                         self.rtcmFrameBuffer = self.rtcmFrameBuffer[rtcmFrameLength:]
+                        logging.debug(f"{self.ntripMountPoint}: Frame complete. self.rtcmFrameBuffer.length: {self.rtcmFrameBuffer.length}")
                         rtcmFrameComplete = True
                     else:
                         self.rtcmFrameAligned = False
