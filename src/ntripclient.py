@@ -475,7 +475,7 @@ class NtripClients:
         timeStampFlag = 0 # CBH: what is the purpose of timeStampFlag?
         while not rtcmFrameComplete:
             if self.ntripStreamChunked:
-                # logging.info(f"{self.ntripMountPoint}:Chunked stream. count : {count}")
+                logging.debug(f"{self.ntripMountPoint}: Chunked stream.")
                 try:
                     rawLine = await self.ntripReader.readuntil(b"\r\n")
                     length = int(rawLine[:-2].decode("ISO-8859-1"), 16)
@@ -505,10 +505,17 @@ class NtripClients:
                 receivedBytes = BitStream(rawLine[:-2])
                 logging.debug(f"Chunk {receivedBytes.length}:{length * 8}. ")
             else:
-                logging.debug(f"{self.ntripMountPoint}:Not chunked stream.")
-                rawLine = await self.ntripReader.read(2048)
-                receivedBytes = BitStream(rawLine)
-                timeStamp = time()
+                try:
+                    logging.debug(f"{self.ntripMountPoint}: Stream not chunked.")
+                    rawLine = await self.ntripReader.read(2048)
+                    receivedBytes = BitStream(rawLine)
+                    if timeStampFlag == 0:
+                        timeStamp = time()
+                        timeStampFlag = 1
+                except Exception as error:
+                    raise error("Unchunked stream read failed.")
+
+
             if self.ntripStreamChunked and receivedBytes.length != length * 8:
                 logging.error(
                     f"{self.ntripMountPoint}:Chunk incomplete "
@@ -516,7 +523,9 @@ class NtripClients:
                     "Closing connection! "
                 )
                 raise IOError("Chunk incomplete ")
+
             self.rtcmFrameBuffer += receivedBytes
+
             if not self.rtcmFrameAligned:
                 rtcmFramePos = self.rtcmFrameBuffer.find(
                     NtripClients.RTCM3FRAMEPREAMPLE, bytealigned=True
