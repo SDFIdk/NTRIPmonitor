@@ -515,7 +515,6 @@ class NtripClients:
                 except Exception as error:
                     raise error("Unchunked stream read failed.")
 
-
             if self.ntripStreamChunked and receivedBytes.length != length * 8:
                 logging.error(
                     f"{self.ntripMountPoint}:Chunk incomplete "
@@ -525,6 +524,8 @@ class NtripClients:
                 raise IOError("Chunk incomplete ")
 
             self.rtcmFrameBuffer += receivedBytes
+
+            logging.debug(f"{self.ntripMountPoint}: Bytes received. self.rtcmFrameAligned: {self.rtcmFrameAligned}, self.rtcmFramePreample: {self.rtcmFramePreample}, self.rtcmFrameBuffer.length: {self.rtcmFrameBuffer.length}")
 
             if not self.rtcmFrameAligned:
                 rtcmFramePos = self.rtcmFrameBuffer.find(
