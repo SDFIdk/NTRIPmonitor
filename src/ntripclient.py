@@ -543,6 +543,7 @@ class NtripClients:
                     NtripClients.RTCM3FRAMEHEADERFORMAT
                 )
                 rtcmFrameLength = (rtcmPayloadLength + 6) * 8
+                logging.debug(f"{self.ntripMountPoint}: rtcmPayloadLength: {rtcmPayloadLength}, rtcmFrameLength: {rtcmFrameLength}")
                 if self.rtcmFrameBuffer.length >= rtcmFrameLength:
                     rtcmFrame = self.rtcmFrameBuffer[:rtcmFrameLength]
                     calcCrc = crc24q(rtcmFrame[:-24])
