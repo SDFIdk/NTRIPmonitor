@@ -48,6 +48,9 @@ services:
             - GF_SECURITY_ADMIN_USER=${GRAFANA_USER}
             - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
             - GF_USERS_ALLOW_SIGN_UP=false
+            - GF_SMTP_ENABLED=true
+            - GF_SMTP_HOST=smtp.statens-it.dk:25
+            - GF_SMTP_SKIP_VERIFY=true
         depends_on:
             - timescaledb
         ports:
