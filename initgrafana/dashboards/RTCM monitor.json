@@ -24,17 +24,114 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 4,
   "links": [],
   "liveNow": false,
   "panels": [
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "UYgXEmhnz"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 73,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "9.5.19",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "UYgXEmhnz"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT mountpoint, disconnect_time, reconnect_time, coalesce(reconnect_time, CURRENT_TIMESTAMP)-disconnect_time as duration FROM connection_logger WHERE $__timeFilter(disconnect_time) OR reconnect_time IS NULL OR \r\n$__timeFilter(reconnect_time) ORDER BY disconnect_time DESC",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Disconnected mountpoints",
+      "type": "table"
+    },
+    {
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 72,
+      "title": "Row title",
+      "type": "row"
+    },
     {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 0
+        "y": 9
       },
       "id": 17,
       "panels": [],
@@ -135,7 +232,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 1
+        "y": 10
       },
       "id": 8,
       "options": {
@@ -247,7 +344,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 1
+        "y": 10
       },
       "id": 12,
       "options": {
@@ -290,7 +387,7 @@
                 "parameters": [],
                 "type": "function"
               }
-            ],
+[O            ],
             "groupBy": [
               {
                 "property": {
@@ -368,7 +465,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 9
+        "y": 18
       },
       "id": 65,
       "options": {
@@ -520,7 +617,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 9
+        "y": 18
       },
       "id": 66,
       "options": {
@@ -681,7 +778,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 17
+        "y": 26
       },
       "id": 55,
       "options": {
@@ -779,7 +876,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 26
+        "y": 35
       },
       "id": 68,
       "options": {
@@ -836,7 +933,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 35
+        "y": 44
       },
       "id": 33,
       "panels": [],
@@ -889,7 +986,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -904,7 +1002,7 @@
         "h": 12,
         "w": 24,
         "x": 0,
-        "y": 36
+        "y": 45
       },
       "id": 46,
       "options": {
@@ -1013,7 +1111,7 @@
         "h": 12,
         "w": 24,
         "x": 0,
-        "y": 48
+        "y": 57
       },
       "id": 69,
       "options": {
@@ -1095,7 +1193,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 60
+        "y": 69
       },
       "id": 51,
       "options": {
@@ -1178,7 +1276,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 60
+        "y": 69
       },
       "id": 52,
       "options": {
@@ -1356,7 +1454,7 @@
             "selected": false,
             "text": "1d",
             "value": "1d"
-          }
+[I          }
         ],
         "query": "10s, 20s, 30s, 1m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 12h, 1d",
         "refresh": 2,
@@ -1366,8 +1464,8 @@
     ]
   },
   "time": {
-    "from": "now-15m",
-    "to": "now"
+    "from": "2024-10-24T13:24:19.644Z",
+    "to": "2024-10-24T13:41:57.934Z"
   },
   "timepicker": {
     "refresh_intervals": [
@@ -1383,6 +1481,6 @@
   "timezone": "",
   "title": "RTCM overview",
   "uid": "fuzCpN4Iz724",
-  "version": 3,
+  "version": 1,
   "weekStart": ""
 }
