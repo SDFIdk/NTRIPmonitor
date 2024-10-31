@@ -28,6 +28,19 @@
   "liveNow": false,
   "panels": [
     {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 17,
+      "panels": [],
+      "title": "Overview",
+      "type": "row"
+    },
+    {
       "datasource": {
         "type": "postgres",
         "uid": "UYgXEmhnz"
@@ -65,7 +78,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 0
+        "y": 1
       },
       "id": 73,
       "options": {
@@ -115,28 +128,91 @@
       "type": "table"
     },
     {
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 8
+      "datasource": {
+        "type": "postgres",
+        "uid": "UYgXEmhnz"
       },
-      "id": 72,
-      "title": "Row title",
-      "type": "row"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 9
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
       },
-      "id": 17,
-      "panels": [],
-      "title": "Overview",
-      "type": "row"
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 1
+      },
+      "id": 74,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "9.5.19",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "UYgXEmhnz"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT mountpoint as \"Mountpoint\", ecef_x as \"X\", ecef_y as \"Y\", ecef_z as \"Z\", anthgt as \"Antenna height\" FROM coordinates ORDER BY mountpoint",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Coordinates",
+      "type": "table"
     },
     {
       "datasource": {
@@ -232,7 +308,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 10
+        "y": 9
       },
       "id": 8,
       "options": {
@@ -344,7 +420,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 10
+        "y": 9
       },
       "id": 12,
       "options": {
@@ -465,7 +541,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 18
+        "y": 17
       },
       "id": 65,
       "options": {
@@ -617,7 +693,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 18
+        "y": 17
       },
       "id": 66,
       "options": {
@@ -778,7 +854,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 26
+        "y": 25
       },
       "id": 55,
       "options": {
@@ -860,8 +936,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "dark-orange",
-                "value": null
+                "color": "dark-orange"
               },
               {
                 "color": "#EAB839",
@@ -876,7 +951,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 35
+        "y": 34
       },
       "id": 68,
       "options": {
@@ -933,7 +1008,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 44
+        "y": 43
       },
       "id": 33,
       "panels": [],
@@ -986,8 +1061,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1002,7 +1076,7 @@
         "h": 12,
         "w": 24,
         "x": 0,
-        "y": 45
+        "y": 44
       },
       "id": 46,
       "options": {
@@ -1111,7 +1185,7 @@
         "h": 12,
         "w": 24,
         "x": 0,
-        "y": 57
+        "y": 56
       },
       "id": 69,
       "options": {
@@ -1193,7 +1267,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 69
+        "y": 68
       },
       "id": 51,
       "options": {
@@ -1276,7 +1350,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 69
+        "y": 68
       },
       "id": 52,
       "options": {
@@ -1326,7 +1400,7 @@
       "type": "gauge"
     }
   ],
-  "refresh": false,
+  "refresh": "",
   "schemaVersion": 38,
   "style": "dark",
   "tags": [],
@@ -1464,8 +1538,8 @@
     ]
   },
   "time": {
-    "from": "2024-10-24T13:24:19.644Z",
-    "to": "2024-10-24T13:41:57.934Z"
+    "from": "now-1h",
+    "to": "now"
   },
   "timepicker": {
     "refresh_intervals": [
