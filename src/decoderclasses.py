@@ -167,7 +167,7 @@ class DecoderPOS(Decoder):
                                z,
                                antHgt])
         except Exception as error:
-            logging.error(f"Failed to decode ARP message with error: {error}. Setting observation to None")
+            logging.error(f"Failed to decode ARP message {self.messageType} with error: {error}. Setting observation to None")
             self.decodedObs = None
         
         return {"decodedObs": self.decodedObs, "table": self.table}

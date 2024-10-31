@@ -226,7 +226,14 @@ class Rtcm3:
             head, obs_list = self.msg_type_to_header_obs[messageType]
             head = message.readlist(head)
             satData = read_sat_data(head, obs_list)
+
+        elif messageType == 1005:
+            head = message.readlist(self.__msg1005)
+            ecefX = head[7]
+            ecefY = head[9]
+            ecefZ = head[10]
             
+            satData = [ecefX, ecefY, ecefZ]
         elif messageType == 1006:
             head = message.readlist(self.__msg1006)
             ecefX = head[7]
@@ -458,7 +465,14 @@ class Rtcm3:
         "uint:17=utc, uint:7=utfChars, uint:8=charBytes, "
         "bytes=string"
     )
-    
+
+    __msg1005 = (
+        "uint:12=1006, uint:12=refStationId, uint:6=itrfYear, "
+        "bool=gpsIndicator, bool=glonassIndicator, bool=galileoIndicator, "
+        "bool=refStationIndicator, int:38=ecefX, bool=singleReceiverOscillatorIndicator, "
+        "pad:1, int:38=ecefY, pad:2, int:38=ecefZ"
+    )
+
     __msg1006 = (
         "uint:12=1006, uint:12=refStationId, uint:6=itrfYear, "
         "bool=gpsIndicator, bool=glonassIndicator, bool=galileoIndicator, "
