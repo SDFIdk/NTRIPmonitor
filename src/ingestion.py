@@ -34,11 +34,12 @@ import asyncpg
 from ntripclient import NtripClients
 from settings import CasterSettings, DbSettings, MultiprocessingSettings
 import decoderclasses
-from databasehandling import DatabaseHandler
 from loghandler import NtripLogHandler
 from rtcm3 import Rtcm3
+
 # from psycopg2 import Error, connect, extras
 # from asyncpg import Connection, connect, exceptions as asyncpg_exceptions
+
 
 def procSigint(signum: int, frame: typing.types.FrameType) -> None:
     logging.warning("Received SIGINT. Shutting down, Adjø!")
@@ -134,12 +135,11 @@ async def dbInsertObsInfoStoredBatch(
             logging.error(f"Failed to insert and commit obs data to database with: {error}")
     return None
 """
+
+
 def clearList(sharedList):
     del sharedList[:]
-    
-import asyncio
-import logging
-from time import sleep
+
 
 async def decodeInsertConsumer(
     sharedEncoded,
@@ -298,8 +298,16 @@ async def procRtcmStream(
     
     while True:
         try:
-            rtcmFrame, timeStamp = await ntripclient.getRtcmFrame()
-            encodedFrames.append({'frame': rtcmFrame, 'timeStampInFrame': timeStamp, 'messageSize': len(rtcmFrame), 'mountPoint': mountPoint})
+            frames_in_buffer, timeStamp = await ntripclient.getRtcmFrame()
+            for rtcmFrame in frames_in_buffer:
+                encodedFrames.append(
+                    {
+                        "frame": rtcmFrame,
+                        "timeStampInFrame": timeStamp,
+                        "messageSize": len(rtcmFrame),
+                        "mountPoint": mountPoint,
+                    }
+                )
             if fail > 0:
                 fail = 0
         except (ConnectionError, IOError, IndexError):
