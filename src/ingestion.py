@@ -174,50 +174,83 @@ def mountpointSplitter(casterSettingsDict: dict, maxProcesses: int) -> list:
     Returns:
         list: lists of lists of tuples, where each tuple contains a mountpoint and its caster ID
     """
+
+    class Caster:
+        def __init__(self, name: str, mountpoints_unallocated: list[str]):
+            self.name = name
+            self.mountpoints_unallocated = mountpoints_unallocated
+            self.mountpoints_allocated = []
+
+    def n_unallocated(caster: Caster) -> int:
+        return len(caster.mountpoints_unallocated)
+
+    class Process:
+        def __init__(self, id: int):
+            self.id = id
+            self.chunks = []
+
+    def n_chunks(process: Process) -> int:
+        return len(process.chunks)
+
+    def allocate(caster: Caster, process: Process, to_allocate: int) -> None:
+
+        mountpoints_to_allocate = caster.mountpoints_unallocated[:to_allocate]
+
+        caster.mountpoints_unallocated = list(
+            set(caster.mountpoints_unallocated) - set(mountpoints_to_allocate)
+        )
+        caster.mountpoints_allocated = (
+            caster.mountpoints_allocated + mountpoints_to_allocate
+        )
+
+        new_chunks = [
+            [caster.name, mountpoint] for mountpoint in mountpoints_to_allocate
+        ]
+        logging.debug(f"Allocating {new_chunks} to process {process.id}")
+
+        process.chunks = process.chunks + new_chunks
+
     try:
-        totalMountpoints = sum(len(caster.mountpoints) for caster in casterSettingsDict.values())
+        total_mountpoints = sum(
+            len(caster.mountpoints) for caster in casterSettingsDict.values()
+        )
+        remaining_mountpoints = total_mountpoints
 
-        casterProcesses = []
-        for casterId, caster in casterSettingsDict.items(): 
-            processes = len(caster.mountpoints) / totalMountpoints * maxProcesses
-            casterProcesses.append((casterId, processes))
+        process_capacity = math.ceil(total_mountpoints / maxProcesses)
 
-        casters = list(casterSettingsDict.items())
-        casters.sort(key=lambda caster: len(caster[1].mountpoints)) 
-        groupedCasters = []
-        group = []
-        groupTotal = 0
-        for i, (casterId, caster) in enumerate(casters):  
-            if groupTotal + len(caster.mountpoints) / totalMountpoints < 1.0:
-                group.append((casterId, caster))  
-                groupTotal += len(caster.mountpoints) / totalMountpoints
-            else:
-                groupedCasters.append((group, max(1, groupTotal)))
-                group = [(casterId, caster)]  
-                groupTotal = len(caster.mountpoints) / totalMountpoints
-        if group:
-            groupedCasters.append((group, max(1, groupTotal)))
+        casters = [
+            Caster(casterId, caster.mountpoints)
+            for casterId, caster in casterSettingsDict.items()
+        ]
+        processes = [Process(id) for id in range(maxProcesses)]
 
-        decimalParts = [groupTotal - int(groupTotal) for group, groupTotal in groupedCasters]
-        remainingProcesses = maxProcesses - sum(int(groupTotal) for group, groupTotal in groupedCasters)
-        for i in sorted(range(len(decimalParts)), key=lambda i: decimalParts[i], reverse=True)[:remainingProcesses]:
-            groupedCasters[i] = (groupedCasters[i][0], groupedCasters[i][1] + 1)
+        while remaining_mountpoints > 0:
+            logging.debug(f"Remaining_mountpoints {remaining_mountpoints}")
+            caster_most_unallocated = max(casters, key=n_unallocated)
+            logging.debug(
+                f"casters {[(caster.name, n_unallocated(caster)) for caster in casters]}"
+            )
+            process_most_free = min(processes, key=n_chunks)
+            logging.debug(
+                f"processes {[(process.id, n_chunks(process)) for process in processes]}"
+            )
 
-        chunks = []
-        for group, groupTotal in groupedCasters:
-            processes = int(groupTotal)
-            for casterId, caster in group:  
-                chunkSize = len(caster.mountpoints) // processes
-                remainder = len(caster.mountpoints) % processes
-                for i in range(processes):
-                    end = (i + 1) * chunkSize + min(i, remainder)
-                    chunk = [(casterId, mp) for mp in caster.mountpoints[i * chunkSize:end]]  
-                    chunks.append(chunk)
+            to_allocate = min(
+                n_unallocated(caster_most_unallocated),
+                process_capacity - n_chunks(process_most_free),
+            )
 
-        return chunks
+            allocate(caster_most_unallocated, process_most_free, to_allocate)
+
+            remaining_mountpoints = remaining_mountpoints - to_allocate
+
+        chunks = [process.chunks for process in processes]
     except Exception as e:
         logging.error(f"Failed to split mountpoints with Error: {e}")
-        return []
+        chunks = []
+
+    return chunks
+
 
 async def appendToList(listToAppend, sharedList, lock):
     loop = asyncio.get_event_loop()
