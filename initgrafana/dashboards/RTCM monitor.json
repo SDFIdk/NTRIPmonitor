@@ -881,7 +881,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\r\n  $__timeGroupAlias(receive_time,'10s'),\r\n  mountpoint AS metric,\r\n  COUNT(rtcm_obs_epoch) AS \"epoch_obs\"\r\nFROM rtcm_packages\r\nWHERE\r\n  $__timeFilter(receive_time) AND\r\n  rtcm_msg_type IN (1077, 1087, 1097, 1117, 1127) AND\r\n  rtcm_obs_epoch IS NOT NULL and\r\n  rtcm_sat_count != 0\r\nGROUP BY 1,2\r\nORDER BY 1,2",
+          "rawSql": "SELECT\r\n  $__timeGroupAlias(receive_time,'10s'),\r\n  mountpoint AS metric,\r\n  COUNT(rtcm_obs_epoch) AS \"epoch_obs\"\r\nFROM rtcm_packages\r\nWHERE\r\n  $__timeFilter(receive_time) AND (\r\n  rtcm_msg_type BETWEEN 1071 AND 1077 OR\r\n  rtcm_msg_type BETWEEN 1081 AND 1087 OR\r\n  rtcm_msg_type BETWEEN 1091 AND 1097 OR\r\n  rtcm_msg_type BETWEEN 1111 AND 1117 OR\r\n  rtcm_msg_type BETWEEN 1121 AND 1127) AND\r\n  rtcm_obs_epoch IS NOT NULL and\r\n  rtcm_sat_count != 0\r\nGROUP BY 1,2\r\nORDER BY 1,2",
           "refId": "A",
           "sql": {
             "columns": [
@@ -978,7 +978,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\r\n  $__timeGroupAlias(receive_time,$data_gap_interval),\r\n  mountpoint AS metric,\r\n  COUNT(rtcm_obs_epoch) AS \"epoch_obs\"\r\nFROM rtcm_packages\r\nWHERE\r\n  $__timeFilter(receive_time) AND\r\n  rtcm_msg_type IN (1077, 1087, 1097, 1117, 1127) AND\r\n  rtcm_obs_epoch IS NOT NULL and\r\n  rtcm_sat_count != 0\r\nGROUP BY 1,2\r\nORDER BY 1,2",
+          "rawSql": "SELECT\r\n  $__timeGroupAlias(receive_time,$data_gap_interval),\r\n  mountpoint AS metric,\r\n  COUNT(rtcm_obs_epoch) AS \"epoch_obs\"\r\nFROM rtcm_packages\r\nWHERE\r\n  $__timeFilter(receive_time) AND (\r\n  rtcm_msg_type BETWEEN 1071 AND 1077 OR\r\n  rtcm_msg_type BETWEEN 1081 AND 1087 OR\r\n  rtcm_msg_type BETWEEN 1091 AND 1097 OR\r\n  rtcm_msg_type BETWEEN 1111 AND 1117 OR\r\n  rtcm_msg_type BETWEEN 1121 AND 1127) AND\r\n  rtcm_obs_epoch IS NOT NULL and\r\n  rtcm_sat_count != 0\r\nGROUP BY 1,2\r\nORDER BY 1,2",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1292,7 +1292,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\r\n  MAX(receive_time) AS time,\r\n  mountpoint AS metric,\r\n  MAX(MOD((EXTRACT(epoch FROM receive_time) + \r\n    CASE \r\n      WHEN rtcm_msg_type BETWEEN 1075 AND 1077 THEN $GPSleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1085 AND 1087 THEN $GLOleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1095 AND 1097 THEN $GALleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1105 AND 1107 THEN $QZZSleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1125 AND 1127 THEN $BEIleapseconds\r\n      ELSE $GPSleapseconds\r\n    END)::NUMERIC(15,3),86400) - MOD((EXTRACT(epoch FROM rtcm_obs_epoch)),86400)) as max_latency\r\nFROM rtcm_packages\r\nWHERE\r\n  receive_time >= NOW() - INTERVAL '60 minutes' AND\r\n  rtcm_obs_epoch IS NOT NULL AND\r\n  rtcm_sat_count != 0\r\nGROUP BY metric\r\nORDER BY time ASC",
+          "rawSql": "SELECT\r\n  MAX(receive_time) AS time,\r\n  mountpoint AS metric,\r\n  MAX(MOD((EXTRACT(epoch FROM receive_time) + \r\n    CASE \r\n      WHEN rtcm_msg_type BETWEEN 1071 AND 1077 THEN $GPSleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1081 AND 1087 THEN $GLOleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1091 AND 1097 THEN $GALleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1101 AND 1107 THEN $QZZSleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1121 AND 1127 THEN $BEIleapseconds\r\n      ELSE $GPSleapseconds\r\n    END)::NUMERIC(15,3),86400) - MOD((EXTRACT(epoch FROM rtcm_obs_epoch)),86400)) as max_latency\r\nFROM rtcm_packages\r\nWHERE\r\n  receive_time >= NOW() - INTERVAL '60 minutes' AND\r\n  rtcm_obs_epoch IS NOT NULL AND\r\n  rtcm_sat_count != 0\r\nGROUP BY metric\r\nORDER BY time ASC",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1375,7 +1375,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\r\n  MAX(receive_time) AS time,\r\n  mountpoint AS metric,\r\n  MIN(MOD((EXTRACT(epoch FROM receive_time) + \r\n    CASE \r\n      WHEN rtcm_msg_type BETWEEN 1075 AND 1077 THEN $GPSleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1085 AND 1087 THEN $GLOleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1095 AND 1097 THEN $GALleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1105 AND 1107 THEN $QZZSleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1125 AND 1127 THEN $BEIleapseconds\r\n      ELSE $GPSleapseconds\r\n    END)::NUMERIC(15,3),86400) - MOD((EXTRACT(epoch FROM rtcm_obs_epoch)),86400)) as max_latency\r\nFROM rtcm_packages\r\nWHERE\r\n  receive_time >= NOW() - INTERVAL '60 minutes' AND\r\n  rtcm_obs_epoch IS NOT NULL AND\r\n  rtcm_sat_count != 0\r\nGROUP BY metric\r\nORDER BY time ASC",
+          "rawSql": "SELECT\r\n  MAX(receive_time) AS time,\r\n  mountpoint AS metric,\r\n  MIN(MOD((EXTRACT(epoch FROM receive_time) + \r\n    CASE \r\n      WHEN rtcm_msg_type BETWEEN 1071 AND 1077 THEN $GPSleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1081 AND 1087 THEN $GLOleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1091 AND 1097 THEN $GALleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1101 AND 1107 THEN $QZZSleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1121 AND 1127 THEN $BEIleapseconds\r\n      ELSE $GPSleapseconds\r\n    END)::NUMERIC(15,3),86400) - MOD((EXTRACT(epoch FROM rtcm_obs_epoch)),86400)) as max_latency\r\nFROM rtcm_packages\r\nWHERE\r\n  receive_time >= NOW() - INTERVAL '60 minutes' AND\r\n  rtcm_obs_epoch IS NOT NULL AND\r\n  rtcm_sat_count != 0\r\nGROUP BY metric\r\nORDER BY time ASC",
           "refId": "A",
           "sql": {
             "columns": [
