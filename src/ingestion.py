@@ -37,9 +37,6 @@ import decoderclasses
 from loghandler import NtripLogHandler
 from rtcm3 import Rtcm3
 
-# from psycopg2 import Error, connect, extras
-# from asyncpg import Connection, connect, exceptions as asyncpg_exceptions
-
 
 def procSigint(signum: int, frame: typing.types.FrameType) -> None:
     logging.warning("Received SIGINT. Shutting down, Adjø!")
@@ -792,13 +789,6 @@ if __name__ == "__main__":
         help="Test connection to Ntripcaster without committing data to database.",
     )
     parser.add_argument(
-        "-m",
-        "--mountpoint",
-        action="append",
-        help="Name of mountpoint without leading / (e.g. MPT1). "
-        + "Overrides mountpoint list in ingest.conf",
-    )
-    parser.add_argument(
         "-1",
         "--ntrip1",
         action="store_true",
@@ -823,7 +813,6 @@ if __name__ == "__main__":
     config = ConfigParser()
 
     # Initialize caster and database settings
-    casterSettings = CasterSettings()
     dbSettings = DbSettings()
     processingSettings = MultiprocessingSettings()
     # Set verbosity level
@@ -869,14 +858,7 @@ if __name__ == "__main__":
     processingSettings.appendCheck = float(
         os.getenv("APPEND_CHECK")
     )  # Currently un-used. Will be used for appending shared list.
-    # Override mountpoints if specified in command line arguments
-    if args.mountpoint:
-        casterSettings.mountpoints = args.mountpoint
-    # Get mountpoints from caster if not specified in config or command line arguments
-    if casterSettings.mountpoints == []:
-        casterSettings.mountpoints = asyncio.run(getMountpoints(casterSettings))
-    # Log the mountpoints being used
-    logging.debug(f"Using mountpoints: {casterSettings.mountpoints}")
+
     # If test mode is enabled, don't use database settings
     if args.test:
         dbSettings = None
