@@ -540,7 +540,7 @@ class NtripClients:
             
             frames_in_buffer = []
             while self.rtcmFramePreample and self.rtcmFrameBuffer.length >= 48:
-                # self.rtcmFrameBuffer.pos = 0
+                self.rtcmFrameBuffer.pos = 0
                 (rtcmPreAmple, rtcmPayloadLength) = self.rtcmFrameBuffer.peeklist(
                     NtripClients.RTCM3FRAMEHEADERFORMAT
                 )
