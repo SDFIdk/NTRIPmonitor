@@ -386,7 +386,7 @@ async def getMountpoints(
         asyncio.sleep(sleepTime)
     # If an unknown error occurs, log an error message and abort monitoring
     except Exception as error:
-        logging.error(f"Unknown error : {error}")
+        logging.error(f"Unknown error: {error}")
     # If the source table is successfully retrieved, extract the mountpoints
     else:
         for row in sourceTable:
