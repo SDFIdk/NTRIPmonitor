@@ -470,7 +470,7 @@ class NtripClients:
         self.ntripWriter.write(rtcmFrame)
         await self.ntripWriter.drain()
 
-    async def getRtcmFrame(self) -> list[BitStream], float:
+    async def getRtcmFrame(self):
         rtcmFrameComplete = False
         timeStampFlag = 0
         while not rtcmFrameComplete:
