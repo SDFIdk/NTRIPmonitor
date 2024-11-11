@@ -499,7 +499,7 @@
           ],
           "metricColumn": "mountpoint",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroupAlias(receive_time,$__interval),\n  mountpoint AS metric,\n  SUM(rtcm_msg_size)/CAST($__interval_ms/1000 AS int)/1024 AS \"kB/s average over $__interval\"\nFROM rtcm_packages \nWHERE\n  $__timeFilter(receive_time)\nGROUP BY 1,2 \nORDER BY 1,2",
+          "rawSql": "SELECT\n  $__timeGroupAlias(receive_time,$__interval),\n  mountpoint AS metric,\n  SUM(rtcm_msg_size)/CAST($__interval_ms/1000 AS int)/8/1024 AS \"kB/s average over $__interval\"\nFROM rtcm_packages \nWHERE\n  $__timeFilter(receive_time)\nGROUP BY 1,2 \nORDER BY 1,2",
           "refId": "A",
           "select": [
             [
