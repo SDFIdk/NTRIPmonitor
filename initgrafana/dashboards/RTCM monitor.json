@@ -123,7 +123,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\r\n  mountpoint AS metric,\r\n  AVG(rtcm_sat_count) AS \"satellites\"\r\nFROM (\r\n  SELECT\r\n    mountpoint,\r\n    $__timeGroup(receive_time, $__interval) as minute,\r\n  SUM(rtcm_sat_count)/CAST($__interval_ms/1000 AS int) AS rtcm_sat_count\r\n  FROM rtcm_packages\r\n  WHERE\r\n    $__timeFilter(receive_time) AND (\r\n  rtcm_msg_type BETWEEN 1071 AND 1077 OR\r\n  rtcm_msg_type BETWEEN 1081 AND 1087 OR\r\n  rtcm_msg_type BETWEEN 1091 AND 1097 OR\r\n  rtcm_msg_type BETWEEN 1111 AND 1117 OR\r\n  rtcm_msg_type BETWEEN 1121 AND 1127 OR\r\n  rtcm_msg_type BETWEEN 1131 AND 1137)\r\n  GROUP BY mountpoint, minute\r\n) subquery\r\nGROUP BY mountpoint\r\nORDER BY mountpoint",
+          "rawSql": "SELECT\r\n  mountpoint AS metric,\r\n  AVG(rtcm_sat_count) AS \"satellites\"\r\nFROM (\r\n  SELECT\r\n    mountpoint,\r\n    $__timeGroup(receive_time, $__interval) as minute,\r\n  SUM(rtcm_sat_count)/($__interval_ms/1000) AS rtcm_sat_count\r\n  FROM rtcm_packages\r\n  WHERE\r\n    $__timeFilter(receive_time) AND (\r\n  rtcm_msg_type BETWEEN 1071 AND 1077 OR\r\n  rtcm_msg_type BETWEEN 1081 AND 1087 OR\r\n  rtcm_msg_type BETWEEN 1091 AND 1097 OR\r\n  rtcm_msg_type BETWEEN 1111 AND 1117 OR\r\n  rtcm_msg_type BETWEEN 1121 AND 1127 OR\r\n  rtcm_msg_type BETWEEN 1131 AND 1137)\r\n  GROUP BY mountpoint, minute\r\n) subquery\r\nGROUP BY mountpoint\r\nORDER BY mountpoint",
           "refId": "A",
           "sql": {
             "columns": [
@@ -245,7 +245,7 @@
           ],
           "metricColumn": "mountpoint",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroupAlias(receive_time,$__interval),\n  mountpoint AS metric,\n  SUM(rtcm_sat_count)/CAST($__interval_ms/1000 AS int) AS \"rtcm_sat_count\"\nFROM rtcm_packages \nWHERE\n $__timeFilter(receive_time) AND (\n  rtcm_msg_type BETWEEN 1071 AND 1077 OR\n  rtcm_msg_type BETWEEN 1081 AND 1087 OR\n  rtcm_msg_type BETWEEN 1091 AND 1097 OR\n  rtcm_msg_type BETWEEN 1111 AND 1117 OR\n  rtcm_msg_type BETWEEN 1121 AND 1127 OR\n  rtcm_msg_type BETWEEN 1131 AND 1137)\nGROUP BY 1,2 \nORDER BY 1,2",
+          "rawSql": "SELECT\n  $__timeGroupAlias(receive_time,$__interval),\n  mountpoint AS metric,\n  SUM(rtcm_sat_count)/($__interval_ms/1000) AS \"rtcm_sat_count\"\nFROM rtcm_packages \nWHERE\n $__timeFilter(receive_time) AND (\n  rtcm_msg_type BETWEEN 1071 AND 1077 OR\n  rtcm_msg_type BETWEEN 1081 AND 1087 OR\n  rtcm_msg_type BETWEEN 1091 AND 1097 OR\n  rtcm_msg_type BETWEEN 1111 AND 1117 OR\n  rtcm_msg_type BETWEEN 1121 AND 1127 OR\n  rtcm_msg_type BETWEEN 1131 AND 1137)\nGROUP BY 1,2 \nORDER BY 1,2",
           "refId": "A",
           "select": [
             [
@@ -383,7 +383,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\r\n  mountpoint AS metric,\r\n  AVG(count_per_interval)/8/1024 AS \"kB/s average\"\r\nFROM (\r\n  SELECT\r\n    mountpoint,\r\n    $__timeGroup(receive_time, $__interval) as minute,\r\n    SUM(rtcm_msg_size)/CAST($__interval_ms/1000 as INT) AS count_per_interval\r\n  FROM rtcm_packages\r\n  WHERE\r\n    $__timeFilter(receive_time)\r\n  GROUP BY mountpoint, minute\r\n) subquery\r\nGROUP BY mountpoint\r\nORDER BY mountpoint",
+          "rawSql": "SELECT\r\n  mountpoint AS metric,\r\n  AVG(count_per_interval)/8/1024 AS \"kB/s average\"\r\nFROM (\r\n  SELECT\r\n    mountpoint,\r\n    $__timeGroup(receive_time, $__interval) as minute,\r\n    SUM(rtcm_msg_size)/CAST($__interval_ms/1000 AS FLOAT) AS count_per_interval\r\n  FROM rtcm_packages\r\n  WHERE\r\n    $__timeFilter(receive_time)\r\n  GROUP BY mountpoint, minute\r\n) subquery\r\nGROUP BY mountpoint\r\nORDER BY mountpoint",
           "refId": "A",
           "sql": {
             "columns": [
@@ -499,7 +499,7 @@
           ],
           "metricColumn": "mountpoint",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroupAlias(receive_time,$__interval),\n  mountpoint AS metric,\n  SUM(rtcm_msg_size)/CAST($__interval_ms/1000 AS int)/8/1024 AS \"kB/s average over $__interval\"\nFROM rtcm_packages \nWHERE\n  $__timeFilter(receive_time)\nGROUP BY 1,2 \nORDER BY 1,2",
+          "rawSql": "SELECT\n  $__timeGroupAlias(receive_time,$__interval),\n  mountpoint AS metric,\n  SUM(rtcm_msg_size)/CAST($__interval_ms/1000 AS FLOAT)/8/1024 AS \"kB/s average over $__interval\"\nFROM rtcm_packages \nWHERE\n  $__timeFilter(receive_time)\nGROUP BY 1,2 \nORDER BY 1,2",
           "refId": "A",
           "select": [
             [
