@@ -78,7 +78,6 @@ class NtripLogHandler:
                         f"%Y-%m-%d %H:%M:%S.{int(timestamp % 1 * 1000000):06}",
                         gmtime(timestamp),
                     )
-                    logging.info([self.disconnect_id, reconnect_time])
                     try:
                         await connection.execute(
                             """
@@ -105,7 +104,7 @@ class NtripLogHandler:
                         f"%Y-%m-%d %H:%M:%S.{int(timestamp % 1 * 1000000):06}",
                         gmtime(timestamp),
                     )
-                    logging.info([mountPoint, disconnect_time])
+                    logging.info(f"{mountPoint}: Disconnected at {disconnect_time}")
                     try:
                         result = await connection.fetchval(
                             """
@@ -114,7 +113,6 @@ class NtripLogHandler:
                             json.dumps([mountPoint, disconnect_time]),
                         )
                         self.disconnect_id = result
-                        logging.info(result)
                     except asyncpg.exceptions.UndefinedFunctionError as e:
                         logging.error(
                             f"Could not update disconnect log. Stored procedure not found: {e}"

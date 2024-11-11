@@ -87,8 +87,8 @@ class DatabaseHandler:
                 finally:
                     await self.releaseConnection(connection)
             except Exception as error:
-                logging.error(f"databasehandling : {decodedObsFrame}")
-                logging.error(f"rtcmid : {rtcmId}")
+                logging.error(f"Database handling of frame: {decodedObsFrame}")
+                logging.error(f"rtcmId: {rtcmId}")
                 logging.error(f"Failed to insert and commit observational data to database with: {error}")
         return None
 

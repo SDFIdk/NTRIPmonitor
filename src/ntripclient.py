@@ -382,8 +382,7 @@ class NtripClients:
                 raise ConnectionError(
                     f"Connection to {self.casterUrl} failed with: {error}"
                 ) from None
-                logging.error(f"Connection to {self.casterUrl} failed with: {error}")
-                return []
+
             if not line:
                 break
             line = line.decode("ISO-8859-1").rstrip()
