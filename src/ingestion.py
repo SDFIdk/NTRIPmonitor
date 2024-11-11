@@ -425,15 +425,13 @@ async def downloadSourceTable(
         if caster == "Empty":
             logging.info(f"Skipping caster {g}: {caster}.")
             continue
-        logging.info("Requesting source table from caster for mountpoint information")
-        logging.info(f"name : {caster}")
-        logging.info(f"Requesting source table from caster: {casterSettings.casterUrl}")
+        logging.info(f"Requesting source table from caster {caster} for mountpoint information at {casterSettings.casterUrl}")
         while True:
             try:
                 sourceTable = await ntripclient.requestSourcetable(
                     casterSettings.casterUrl
                 )
-                logging.info(f"Source table received from {casterSettings.casterUrl}")
+                logging.info(f"Source table received for caster {caster}.")
                 for row in sourceTable:
                     sourceCols = row.split(sep=";")
                     # If the row represents a stream (STR), add the mountpoint to the list
@@ -455,7 +453,7 @@ async def downloadSourceTable(
                 logging.error(
                     f"{fail} failed attempt to NTRIP connect to {casterSettings.casterUrl}. Will retry in {sleepTime} seconds."
                 )
-                if fail > retry:  # If fail is greater than 5, break the loop
+                if fail > retry:  # If fail is greater than retry (default value 3), break the loop
                     logging.info(
                         f" Attempted to connect to {casterSettings.casterUrl} {retry} times without success. Skipping caster."
                     )
@@ -816,7 +814,7 @@ if __name__ == "__main__":
     dbSettings = DbSettings()
     processingSettings = MultiprocessingSettings()
     # Set verbosity level
-    args.verbosity = 2
+    args.verbosity = 3
     # Set logging level based on verbosity
     logLevel = logging.ERROR
     if args.verbosity == 1:
