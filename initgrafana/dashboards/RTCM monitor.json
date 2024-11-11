@@ -727,7 +727,7 @@
           }
         }
       ],
-      "title": "Coordinates",
+      "title": "Coordinates [m]",
       "type": "table"
     },
     {
