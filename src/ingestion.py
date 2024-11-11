@@ -682,10 +682,6 @@ def RunMultiProcessing(
         for i, mountpointChunk in enumerate(mountpointChunks):
             sharedEncoded = sharedEncodedList[i // processingSettings.readersPerDecoder]
             lock = lockList[i // processingSettings.readersPerDecoder]
-            logging.info(
-                f"Starting process {i+1} with {len(mountpointChunk)} mountpoints:"
-                f"{[t[1] for t in mountpointChunk]}"
-            )
             readingProcess = Process(
                 target=runRtcmStreamTasks,
                 args=(
@@ -695,6 +691,10 @@ def RunMultiProcessing(
                     sharedEncoded,
                     lock,
                 ),
+            )
+            logging.info(
+                f"Starting process {i+1} with {len(mountpointChunk)} mountpoints:"
+                f"{[t[1] for t in mountpointChunk]}: {readingProcess}"
             )
             readingProcesses.append(readingProcess)
 
@@ -709,6 +709,20 @@ def RunMultiProcessing(
             readingProcess.start()
         for decoderProcess in decoderProcesses:
             decoderProcess.start()
+
+        # here we could introduce a watcher
+        logging.info(f"Stage to introduce watcher for {readingProcesses + decoderProcesses}")
+        while True:
+            # Wait 30 seconds between checking processes
+            sleep(30)
+
+            for proc in readingProcesses + decoderProcesses:
+                exitcode = proc.exitcode
+                logging.debug(f"Checking process {proc.pid} with status {proc.is_alive()} and exit code {exitcode}")
+                if exitcode is not None:
+                    proc.start()
+                    logging.warning(f"Process {proc} with un-expected exit_code {exit_code} has been started again.")
+
         for readingProcess in readingProcesses:
             readingProcess.join()
         for decoderProcess in decoderProcesses:
@@ -814,7 +828,7 @@ if __name__ == "__main__":
     dbSettings = DbSettings()
     processingSettings = MultiprocessingSettings()
     # Set verbosity level
-    args.verbosity = 3
+    args.verbosity = 2
     # Set logging level based on verbosity
     logLevel = logging.ERROR
     if args.verbosity == 1:
