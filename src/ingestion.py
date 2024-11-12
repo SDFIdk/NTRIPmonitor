@@ -425,7 +425,9 @@ async def downloadSourceTable(
         if caster == "Empty":
             logging.info(f"Skipping caster {g}: {caster}.")
             continue
-        logging.info(f"Requesting source table from caster {caster} for mountpoint information at {casterSettings.casterUrl}")
+        logging.info(
+            f"Requesting source table from caster {caster} for mountpoint information at {casterSettings.casterUrl}"
+        )
         while True:
             try:
                 sourceTable = await ntripclient.requestSourcetable(
@@ -453,7 +455,9 @@ async def downloadSourceTable(
                 logging.error(
                     f"{fail} failed attempt to NTRIP connect to {casterSettings.casterUrl}. Will retry in {sleepTime} seconds."
                 )
-                if fail > retry:  # If fail is greater than retry (default value 3), break the loop
+                if (
+                    fail > retry
+                ):  # If fail is greater than retry (default value 3), break the loop
                     logging.info(
                         f" Attempted to connect to {casterSettings.casterUrl} {retry} times without success. Skipping caster."
                     )
@@ -644,22 +648,54 @@ def initializationLogger(
     return None
 
 
-def runRtcmStreamTasks(
-    casterSettingsDict: dict,
-    dbSettings: DbSettings,
-    mountpointChunk,
-    sharedEncoded,
-    lock,
-):
-    asyncio.run(
-        rtcmStreamTasks(
-            casterSettingsDict, dbSettings, mountpointChunk, sharedEncoded, lock
+class parallelProcess:
+    def start(self) -> None:
+        try:
+            self.process.close()
+        except ValueError:
+            logging.error(f"Process {self.process.pid} still running.")
+            return
+        except AttributeError:
+            pass
+
+        self.process = Process(target=self.run)
+        self.process.start()
+
+    def join(self) -> None:
+        self.process.join()
+
+
+class readerProcess(parallelProcess):
+    def __init__(
+        self,
+        casterSettingsDict: dict,
+        dbSettings: DbSettings,
+        mountpointChunk: list,
+        sharedEncoded,
+        lock: Lock,
+    ):
+        self.caster = casterSettingsDict
+        self.database = dbSettings
+        self.mountpoints = mountpointChunk
+        self.shared = sharedEncoded
+        self.lock = lock
+
+    def run(self):
+        asyncio.run(
+            rtcmStreamTasks(
+                self.caster, self.database, self.mountpoints, self.shared, self.lock
+            )
         )
-    )
 
 
-def runDecodeInsertConsumer(sharedEncoded, dbSettings: DbSettings, lock):
-    asyncio.run(decodeInsertConsumer(sharedEncoded, dbSettings, lock))
+class decoderProcess(parallelProcess):
+    def __init__(self, dbSettings: DbSettings, sharedEncoded, lock: Lock):
+        self.database = dbSettings
+        self.shared = sharedEncoded
+        self.lock = lock
+
+    def run(self):
+        asyncio.run(decodeInsertConsumer(self.shared, self.database, self.lock))
 
 
 def RunMultiProcessing(
@@ -682,15 +718,12 @@ def RunMultiProcessing(
         for i, mountpointChunk in enumerate(mountpointChunks):
             sharedEncoded = sharedEncodedList[i // processingSettings.readersPerDecoder]
             lock = lockList[i // processingSettings.readersPerDecoder]
-            readingProcess = Process(
-                target=runRtcmStreamTasks,
-                args=(
-                    casterSettingsDict,
-                    dbSettings,
-                    mountpointChunk,
-                    sharedEncoded,
-                    lock,
-                ),
+            readingProcess = readerProcess(
+                casterSettingsDict,
+                dbSettings,
+                mountpointChunk,
+                sharedEncoded,
+                lock,
             )
             logging.info(
                 f"Starting process {i+1} with {len(mountpointChunk)} mountpoints:"
@@ -700,33 +733,34 @@ def RunMultiProcessing(
 
         decoderProcesses = []
         for sharedEncoded, lock in zip(sharedEncodedList, lockList):
-            decoderProcess = Process(
-                target=runDecodeInsertConsumer, args=(sharedEncoded, dbSettings, lock)
-            )
-            decoderProcesses.append(decoderProcess)
+            decodingProcess = decoderProcess(dbSettings, sharedEncoded, lock)
+            decoderProcesses.append(decodingProcess)
 
         for readingProcess in readingProcesses:
             readingProcess.start()
-        for decoderProcess in decoderProcesses:
-            decoderProcess.start()
+        for decodingProcess in decoderProcesses:
+            decodingProcess.start()
 
-        # here we could introduce a watcher
-        logging.info(f"Stage to introduce watcher for {readingProcesses + decoderProcesses}")
+        # here we introduce a watcher
+        logging.info(
+            f"Stage to introduce watcher for {readingProcesses + decoderProcesses}"
+        )
         while True:
-            # Wait 30 seconds between checking processes
+            # Wait 30 seconds between checking processes for aliveness
             sleep(30)
 
             for proc in readingProcesses + decoderProcesses:
-                exitcode = proc.exitcode
-                logging.debug(f"Checking process {proc.pid} with status {proc.is_alive()} and exit code {exitcode}")
+                exitcode = proc.process.exitcode
                 if exitcode is not None:
+                    logging.warning(
+                        f"Restarting process {proc}, with Process object {proc.process} with un-expected exit_code {exitcode}."
+                    )
                     proc.start()
-                    logging.warning(f"Process {proc} with un-expected exit_code {exit_code} has been started again.")
 
         for readingProcess in readingProcesses:
             readingProcess.join()
-        for decoderProcess in decoderProcesses:
-            decoderProcess.join()
+        for decodingProcess in decoderProcesses:
+            decodingProcess.join()
 
 
 def runSingleProcessing(casterSettingsDict: dict, dbSettings: DbSettings):
