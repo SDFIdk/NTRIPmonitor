@@ -69,7 +69,7 @@ Configuration of the NTRIPmonitor is done by creating a configuration file calle
 This repository contains an example [.env.example] that can be used as a template.
 Save the template as a new file [.env] and fill the required information:
 
-- The first section of variables deal with local resources:
+The first section of variables deal with local resources:
 | Variable | Description |
 |---|---|
 | NTRIP_DOCKER_REGISTRY | Location of NTRIPmonitor docker image. If building locally set to ntripmonitor:latest |
@@ -79,7 +79,7 @@ Save the template as a new file [.env] and fill the required information:
 | INGEST_CPU | Integer (FLOAT?) number of CPU's available for ingestion. E.g. 8 |
 | INGEST_MEMORY | Amount of memory availabe for the ingestion. E.g. 8GB |
 
-- The second section of variables deal with the database setup. All can be left to their default values.
+The second section of variables deal with the database setup. All can be left to their default values.
 | Variable | Description |
 |---|---|
 | DB_USER | Choose a username for the database. |
@@ -89,15 +89,15 @@ Save the template as a new file [.env] and fill the required information:
 | DB_PORT | Port for accessing the database. Default: 5432 |
 | DB_STORE_OBSERVATIONS | Storing observations extracted from MSM messages can lead to large amounts of data. Default: True |
 
-- The third section of variables deal with Grafana
+The third section of variables deal with Grafana
 | Variable | Description |
 |---|---|
 | GRAFANA_USER | Choose a username for Grafana. |
 | GRAFANA_PASSWORD | Choose a password for Grafana. |
 
-- The fourth section of variables are the multiprocessing settings. These are described in the section on Multiprocessing below.
+The fourth section of variables are the multiprocessing settings. These are described in the section on Multiprocessing below.
 
-- The remaining sections configure one or more casters. Different casters can be separated by using different characters before the first underscore.
+The remaining sections configure one or more casters. Different casters can be separated by using different characters before the first underscore.
 | Variable | Description |
 |---|---|
 | FIRST_CASTER_ID | Name for caster to be used internally |
