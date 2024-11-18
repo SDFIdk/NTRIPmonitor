@@ -87,7 +87,7 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 9,
         "x": 0,
         "y": 1
       },
@@ -208,8 +208,8 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
+        "w": 9,
+        "x": 9,
         "y": 1
       },
       "id": 66,
@@ -309,6 +309,148 @@
       "fieldConfig": {
         "defaults": {
           "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 16,
+        "w": 6,
+        "x": 18,
+        "y": 1
+      },
+      "id": 76,
+      "options": {
+        "basemap": {
+          "config": {},
+          "name": "Layer 0",
+          "type": "default"
+        },
+        "controls": {
+          "mouseWheelZoom": true,
+          "showAttribution": true,
+          "showDebug": false,
+          "showMeasure": false,
+          "showScale": false,
+          "showZoom": true
+        },
+        "layers": [
+          {
+            "config": {
+              "showLegend": false,
+              "style": {
+                "color": {
+                  "fixed": "dark-green"
+                },
+                "opacity": 0.4,
+                "rotation": {
+                  "fixed": 0,
+                  "max": 360,
+                  "min": -360,
+                  "mode": "mod"
+                },
+                "size": {
+                  "fixed": 5,
+                  "max": 15,
+                  "min": 2
+                },
+                "symbol": {
+                  "fixed": "img/icons/marker/circle.svg",
+                  "mode": "fixed"
+                },
+                "text": {
+                  "field": "mountpoint",
+                  "fixed": "",
+                  "mode": "field"
+                },
+                "textConfig": {
+                  "fontSize": 12,
+                  "offsetX": 0,
+                  "offsetY": -5,
+                  "textAlign": "center",
+                  "textBaseline": "bottom"
+                }
+              }
+            },
+            "location": {
+              "mode": "auto"
+            },
+            "name": "Layer 1",
+            "tooltip": true,
+            "type": "markers"
+          }
+        ],
+        "tooltip": {
+          "mode": "details"
+        },
+        "view": {
+          "allLayers": true,
+          "id": "coords",
+          "lat": 63.048334,
+          "lon": 21.480022,
+          "zoom": 4.24
+        }
+      },
+      "pluginVersion": "9.5.19",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "UYgXEmhnz"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT coord.mountpoint, latitude, longitude\r\nFROM sourcetable_constants source\r\nINNER JOIN coordinates coord ON source.mountpoint = coord.mountpoint",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Mountpoint location from source table",
+      "type": "geomap"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "UYgXEmhnz"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
             "mode": "palette-classic"
           },
           "custom": {
@@ -347,7 +489,7 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 9,
         "x": 0,
         "y": 9
       },
@@ -463,8 +605,8 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
+        "w": 9,
+        "x": 9,
         "y": 9
       },
       "id": 65,
@@ -592,7 +734,7 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 10,
         "x": 0,
         "y": 17
       },
@@ -656,21 +798,32 @@
           "custom": {
             "align": "auto",
             "cellOptions": {
-              "type": "auto"
+              "mode": "gradient",
+              "type": "color-background"
             },
-            "inspect": false
+            "inspect": false,
+            "minWidth": 0,
+            "width": 100
           },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "transparent",
                 "value": null
               },
               {
                 "color": "red",
-                "value": 80
+                "value": 0
+              },
+              {
+                "color": "#EAB839",
+                "value": 10
+              },
+              {
+                "color": "green",
+                "value": 30
               }
             ]
           }
@@ -679,8 +832,97 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
+        "w": 6,
+        "x": 10,
+        "y": 17
+      },
+      "id": 75,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": [
+            "GPS",
+            "Galileo",
+            "BeiDou",
+            "GLONASS"
+          ],
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "9.5.19",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "UYgXEmhnz"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT rtcm.mountpoint as \"Mountpoint\", source.casterprovider as \"Caster\",\r\n    COUNT(CASE WHEN rtcm_msg_type BETWEEN 1071 AND 1077 THEN 1 END)/CAST($__interval_ms/1000 AS INT) AS \"GPS\",\r\n    COUNT(CASE WHEN rtcm_msg_type BETWEEN 1081 AND 1087 THEN 1 END)/CAST($__interval_ms/1000 AS INT) AS \"GLONASS\",\r\n    COUNT(CASE WHEN rtcm_msg_type BETWEEN 1091 AND 1097 THEN 1 END)/CAST($__interval_ms/1000 AS INT) AS \"Galileo\",\r\n    COUNT(CASE WHEN rtcm_msg_type BETWEEN 1121 AND 1127 THEN 1 END)/CAST($__interval_ms/1000 AS INT) AS \"BeiDou\"\r\nFROM rtcm_packages rtcm\r\nINNER JOIN sourcetable_constants source ON rtcm.mountpoint = source.mountpoint\r\nWHERE $__timeFilter(rtcm.receive_time)\r\nGROUP BY source.casterprovider, rtcm.mountpoint\r\nORDER BY source.casterprovider, rtcm.mountpoint\r\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Average number of messages by constellation [1/s]",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "UYgXEmhnz"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false,
+            "width": 150
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
         "y": 17
       },
       "id": 74,
@@ -706,7 +948,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT mountpoint as \"Mountpoint\", ecef_x as \"X\", ecef_y as \"Y\", ecef_z as \"Z\", anthgt as \"Antenna height\" FROM coordinates ORDER BY mountpoint",
+          "rawSql": "SELECT coord.mountpoint as \"Mountpoint\", source.casterprovider as \"Caster\", coord.ecef_x as \"X\", coord.ecef_y as \"Y\", coord.ecef_z as \"Z\", coord.anthgt as \"Antenna height\"\r\nFROM coordinates coord\r\nINNER JOIN rtcm_packages rtcm ON coord.rtcm_package_id = rtcm.rtcm_package_id\r\nINNER JOIN sourcetable_constants source ON coord.mountpoint = source.mountpoint\r\nORDER BY source.casterprovider, coord.mountpoint",
           "refId": "A",
           "sql": {
             "columns": [
