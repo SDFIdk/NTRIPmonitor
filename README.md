@@ -73,7 +73,7 @@ The first section of variables deal with local resources:
 | Variable | Description |
 |---|---|
 | NTRIP_DOCKER_REGISTRY | Location of NTRIPmonitor docker image. If building locally set to ntripmonitor:latest |
-| NTRIP_DATAMOUNT | Location of data to store. If set to Empty, there wil be no data persistence. |
+| NTRIP_DATAMOUNT | Location of data to store. If set to Empty, there wil be no data persistence. Only used in production environment.:q |
 | DB_CPU | Integer number of CPU's available for the database. |
 | DB_MEMORY | Amount of memory availabe for the database. E.g. 32GB |
 | INGEST_CPU | Integer (FLOAT?) number of CPU's available for ingestion. E.g. 8 |
@@ -82,7 +82,7 @@ The first section of variables deal with local resources:
 The second section of variables deal with the database setup. All can be left to their default values.
 | Variable | Description |
 |---|---|
-| DB_USER | Choose a username for the database. |
+| DB_USER | Choose a username for the database. Default: postgres |
 | DB_PASSWORD | Choose a password for the database. |
 | DB_NAME | Default: UREGA |
 | DB_HOST | Default: timescaledb |
@@ -111,7 +111,24 @@ The remaining sections configure one or more casters. Different casters can be s
 
 ### Building docker images and deploying a docker network
 
-Documentation coming soon.
+In a terminal, enter the directory of this code. To build the docker image, execute the following command:
+
+```
+docker buildx build -t ntripmonitor:latest .
+```
+This will build the docker image and store it locally under the name "ntripmonitor:latest".
+
+Make sure you have configured the file [.env] before deploying the network.
+To deploy the test environment.
+
+```
+docker-compose -f docker-compose.dev.yaml up -d
+```
+
+The flag `-d` starts the docker environment in the background.
+If you are ready to deploy the production environment replace `docker-compose.dev.yaml` with `docker-compose.prod.yaml`.
+
+Your NTRIPmonitor instance is now up and running.
 
 ### Setup Check List
 Checklist for launching the monitor solution. 
