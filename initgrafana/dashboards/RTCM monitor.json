@@ -24,7 +24,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 4,
+  "id": 3,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -54,160 +54,7 @@
           "custom": {
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisGridShow": true,
-            "axisLabel": "Data volume [bytes/min]",
-            "axisPlacement": "auto",
-            "fillOpacity": 80,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineWidth": 1,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "thresholdsStyle": {
-              "mode": "line"
-            }
-          },
-          "mappings": [
-            {
-              "options": {
-                "from": 0,
-                "result": {
-                  "color": "dark-red",
-                  "index": 0
-                },
-                "to": 600000
-              },
-              "type": "range"
-            },
-            {
-              "options": {
-                "from": 600000,
-                "result": {
-                  "color": "yellow",
-                  "index": 1
-                },
-                "to": 800000
-              },
-              "type": "range"
-            },
-            {
-              "options": {
-                "from": 800000,
-                "result": {
-                  "color": "green",
-                  "index": 2
-                },
-                "to": 1500000
-              },
-              "type": "range"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 600000
-              },
-              {
-                "color": "#EAB839",
-                "value": 800000
-              },
-              {
-                "color": "#6ED0E0",
-                "value": 1000000
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 1
-      },
-      "id": 8,
-      "options": {
-        "barRadius": 0.4,
-        "barWidth": 0.66,
-        "colorByField": "metric",
-        "fullHighlight": false,
-        "groupWidth": 0.7,
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": false
-        },
-        "orientation": "auto",
-        "showValue": "always",
-        "stacking": "none",
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        },
-        "xTickLabelRotation": 90,
-        "xTickLabelSpacing": 0
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "postgres",
-            "uid": "UYgXEmhnz"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT\r\n  mountpoint AS metric,\r\n  AVG(count_per_minute) AS \"avg_rtcm_sat_count\"\r\nFROM (\r\n  SELECT\r\n    mountpoint,\r\n    date_trunc('minute', receive_time) as minute,\r\n    SUM(rtcm_msg_size) AS count_per_minute\r\n  FROM rtcm_packages\r\n  WHERE\r\n    $__timeFilter(receive_time)\r\n  GROUP BY mountpoint, minute\r\n) subquery\r\nGROUP BY mountpoint\r\nORDER BY mountpoint",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        }
-      ],
-      "title": "Data flow [bytes/min]",
-      "type": "barchart"
-    },
-    {
-      "datasource": {
-        "type": "postgres",
-        "uid": "UYgXEmhnz"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisGridShow": true,
-            "axisLabel": "Average satellite count",
+            "axisLabel": "",
             "axisPlacement": "auto",
             "fillOpacity": 80,
             "gradientMode": "none",
@@ -233,10 +80,6 @@
               {
                 "color": "dark-blue",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -245,34 +88,33 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
+        "w": 9,
+        "x": 0,
         "y": 1
       },
       "id": 12,
       "options": {
         "barRadius": 0.4,
-        "barWidth": 0.79,
+        "barWidth": 0.66,
         "fullHighlight": false,
         "groupWidth": 0.7,
         "legend": {
           "calcs": [],
           "displayMode": "list",
           "placement": "bottom",
-          "showLegend": false
+          "showLegend": true
         },
         "orientation": "auto",
-        "showValue": "auto",
-        "stacking": "none",
+        "showValue": "always",
+        "stacking": "normal",
         "tooltip": {
           "mode": "single",
           "sort": "none"
         },
-        "xField": "metric",
-        "xTickLabelRotation": 90,
+        "xTickLabelRotation": 45,
         "xTickLabelSpacing": 0
       },
-      "pluginVersion": "9.3.6",
+      "pluginVersion": "9.5.19",
       "targets": [
         {
           "datasource": {
@@ -282,7 +124,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\r\n  mountpoint AS metric,\r\n  AVG(count_per_minute)/60 AS \"avg_rtcm_sat_count\"\r\nFROM (\r\n  SELECT\r\n    mountpoint,\r\n    date_trunc('minute', receive_time) as minute,\r\n    SUM(rtcm_sat_count) AS count_per_minute\r\n  FROM rtcm_packages\r\n  WHERE\r\n    $__timeFilter(receive_time)\r\n  GROUP BY mountpoint, minute\r\n) subquery\r\nGROUP BY mountpoint\r\nORDER BY mountpoint",
+          "rawSql": "SELECT rtcm.mountpoint,\r\n  AVG(gps_sum) AS \"GPS\",\r\n  AVG(glo_sum) AS \"GLONASS\",\r\n  AVG(gal_sum) AS \"GALILEO\",\r\n  AVG(bds_sum) AS \"BEIDOU\"\r\nFROM (\r\n  SELECT\r\n    mountpoint,\r\n    $__timeGroup(receive_time, $__interval) as time,\r\n    SUM(CASE WHEN rtcm_msg_type BETWEEN 1071 AND 1077 THEN rtcm_sat_count END)/CAST($__interval_ms/1000 AS INT) AS gps_sum,\r\n    SUM(CASE WHEN rtcm_msg_type BETWEEN 1081 AND 1087 THEN rtcm_sat_count END)/CAST($__interval_ms/1000 AS INT) AS glo_sum,\r\n    SUM(CASE WHEN rtcm_msg_type BETWEEN 1091 AND 1097 THEN rtcm_sat_count END)/CAST($__interval_ms/1000 AS INT) AS gal_sum,\r\n    SUM(CASE WHEN rtcm_msg_type BETWEEN 1121 AND 1127 THEN rtcm_sat_count END)/CAST($__interval_ms/1000 AS INT) AS bds_sum\r\n  FROM rtcm_packages\r\n  WHERE\r\n    $__timeFilter(receive_time)\r\n  GROUP BY mountpoint, time\r\n) rtcm\r\nINNER JOIN sourcetable_constants source ON rtcm.mountpoint = source.mountpoint\r\nGROUP BY source.casterprovider, rtcm.mountpoint\r\nORDER BY source.casterprovider, rtcm.mountpoint\r\n",
           "refId": "A",
           "sql": {
             "columns": [
@@ -303,7 +145,7 @@
           }
         }
       ],
-      "title": "Average Satellite Count [Sat/min]",
+      "title": "Satellite count average",
       "type": "barchart"
     },
     {
@@ -311,158 +153,7 @@
         "type": "postgres",
         "uid": "UYgXEmhnz"
       },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "Data volume [Bytes/min]",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 9
-      },
-      "id": 65,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "postgres",
-            "uid": "UYgXEmhnz"
-          },
-          "editorMode": "code",
-          "format": "time_series",
-          "group": [
-            {
-              "params": [
-                "1m",
-                "none"
-              ],
-              "type": "time"
-            }
-          ],
-          "metricColumn": "mountpoint",
-          "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroupAlias(receive_time,1m),\n  mountpoint AS metric,\n  SUM(rtcm_msg_size) AS \"rtcm_sat_count\"\nFROM rtcm_packages \nWHERE\n  $__timeFilter(receive_time)\nGROUP BY 1,2 \nORDER BY 1,2",
-          "refId": "A",
-          "select": [
-            [
-              {
-                "params": [
-                  "rtcm_msg_size"
-                ],
-                "type": "column"
-              },
-              {
-                "params": [
-                  "sum"
-                ],
-                "type": "aggregate"
-              },
-              {
-                "params": [
-                  "rtcm_msg_size"
-                ],
-                "type": "alias"
-              }
-            ]
-          ],
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          },
-          "table": "rtcm_packages",
-          "timeColumn": "receive_time",
-          "timeColumnType": "timestamp",
-          "where": [
-            {
-              "name": "$__timeFilter",
-              "params": [],
-              "type": "macro"
-            }
-          ]
-        }
-      ],
-      "title": "Time series data flow [bytes/min]",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "postgres",
-        "uid": "UYgXEmhnz"
-      },
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -518,9 +209,9 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 9
+        "w": 9,
+        "x": 9,
+        "y": 1
       },
       "id": 66,
       "options": {
@@ -535,6 +226,7 @@
           "sort": "none"
         }
       },
+      "pluginVersion": "9.5.19",
       "targets": [
         {
           "datasource": {
@@ -554,7 +246,7 @@
           ],
           "metricColumn": "mountpoint",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroupAlias(receive_time,1m),\n  mountpoint AS metric,\n  SUM(rtcm_sat_count)/60 AS \"rtcm_sat_count\"\nFROM rtcm_packages \nWHERE\n $__timeFilter(receive_time)\nGROUP BY 1,2 \nORDER BY 1,2",
+          "rawSql": "SELECT\n  $__timeGroupAlias(receive_time,$__interval),\n  mountpoint AS metric,\n  SUM(rtcm_sat_count)/($__interval_ms/1000) AS \"rtcm_sat_count\"\nFROM rtcm_packages\nWHERE\n $__timeFilter(receive_time) AND (\n  rtcm_msg_type BETWEEN 1071 AND 1077 OR\n  rtcm_msg_type BETWEEN 1081 AND 1087 OR\n  rtcm_msg_type BETWEEN 1091 AND 1097 OR\n  rtcm_msg_type BETWEEN 1121 AND 1127)\nGROUP BY time,metric \nORDER BY time,metric ",
           "refId": "A",
           "select": [
             [
@@ -607,7 +299,7 @@
           ]
         }
       ],
-      "title": "Time Series Average Satellite Count [Sat/min]",
+      "title": "Satellite count $__interval-average",
       "type": "timeseries"
     },
     {
@@ -621,56 +313,19 @@
             "mode": "thresholds"
           },
           "custom": {
-            "fillOpacity": 70,
-            "lineWidth": 1
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
           },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "dark-red",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 5
-              },
-              {
-                "color": "super-light-red",
-                "value": 10
-              },
-              {
-                "color": "dark-orange",
-                "value": 20
-              },
-              {
-                "color": "orange",
-                "value": 30
-              },
-              {
-                "color": "light-orange",
-                "value": 35
-              },
-              {
-                "color": "dark-yellow",
-                "value": 36
-              },
-              {
-                "color": "light-yellow",
-                "value": 37
-              },
-              {
-                "color": "super-light-green",
-                "value": 38
-              },
-              {
                 "color": "green",
-                "value": 39
-              },
-              {
-                "color": "dark-green",
-                "value": 40
+                "value": null
               }
             ]
           }
@@ -678,27 +333,84 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 9,
-        "w": 24,
-        "x": 0,
-        "y": 17
+        "h": 24,
+        "w": 6,
+        "x": 18,
+        "y": 1
       },
-      "id": 55,
+      "id": 76,
       "options": {
-        "colWidth": 0.95,
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": false
+        "basemap": {
+          "config": {},
+          "name": "Layer 0",
+          "type": "default"
         },
-        "rowHeight": 0.9,
-        "showValue": "never",
+        "controls": {
+          "mouseWheelZoom": true,
+          "showAttribution": true,
+          "showDebug": false,
+          "showMeasure": false,
+          "showScale": false,
+          "showZoom": true
+        },
+        "layers": [
+          {
+            "config": {
+              "showLegend": false,
+              "style": {
+                "color": {
+                  "fixed": "dark-green"
+                },
+                "opacity": 0.4,
+                "rotation": {
+                  "fixed": 0,
+                  "max": 360,
+                  "min": -360,
+                  "mode": "mod"
+                },
+                "size": {
+                  "fixed": 5,
+                  "max": 15,
+                  "min": 2
+                },
+                "symbol": {
+                  "fixed": "img/icons/marker/circle.svg",
+                  "mode": "fixed"
+                },
+                "text": {
+                  "field": "mountpoint",
+                  "fixed": "",
+                  "mode": "field"
+                },
+                "textConfig": {
+                  "fontSize": 12,
+                  "offsetX": 0,
+                  "offsetY": -5,
+                  "textAlign": "center",
+                  "textBaseline": "bottom"
+                }
+              }
+            },
+            "location": {
+              "mode": "auto"
+            },
+            "name": "Layer 1",
+            "tooltip": true,
+            "type": "markers"
+          }
+        ],
         "tooltip": {
-          "mode": "single",
-          "sort": "none"
+          "mode": "details"
+        },
+        "view": {
+          "allLayers": true,
+          "id": "coords",
+          "lat": 63.048334,
+          "lon": 21.480022,
+          "zoom": 4.24
         }
       },
-      "pluginVersion": "9.3.6",
+      "pluginVersion": "9.5.19",
       "targets": [
         {
           "datasource": {
@@ -706,9 +418,9 @@
             "uid": "UYgXEmhnz"
           },
           "editorMode": "code",
-          "format": "time_series",
+          "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\r\n  $__timeGroupAlias(receive_time,'10s'),\r\n  mountpoint AS metric,\r\n  COUNT(rtcm_obs_epoch) AS \"epoch_obs\"\r\nFROM rtcm_packages\r\nWHERE\r\n  $__timeFilter(receive_time) AND\r\n  rtcm_msg_type IN (1077, 1087, 1097, 1117, 1127) AND\r\n  rtcm_obs_epoch IS NOT NULL and\r\n  rtcm_sat_count != 0\r\nGROUP BY 1,2\r\nORDER BY 1,2",
+          "rawSql": "SELECT coord.mountpoint, latitude, longitude\r\nFROM sourcetable_constants source\r\nINNER JOIN coordinates coord ON source.mountpoint = coord.mountpoint",
           "refId": "A",
           "sql": {
             "columns": [
@@ -729,8 +441,263 @@
           }
         }
       ],
-      "title": "Data gaps",
-      "type": "status-history"
+      "title": "Mountpoint location from source table",
+      "type": "geomap"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "UYgXEmhnz"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "blue",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisGridShow": true,
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 9,
+        "x": 0,
+        "y": 9
+      },
+      "id": 8,
+      "options": {
+        "barRadius": 0.4,
+        "barWidth": 0.66,
+        "colorByField": "metric",
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "orientation": "auto",
+        "showValue": "always",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 45,
+        "xTickLabelSpacing": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "UYgXEmhnz"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT subquery.mountpoint as metric,\r\n  AVG(count_per_interval)/8/1024 AS \"kB/s average\"\r\nFROM (\r\n  SELECT\r\n    mountpoint,\r\n    $__timeGroup(receive_time, $__interval) as minute,\r\n    SUM(rtcm_msg_size)/CAST($__interval_ms/1000 AS FLOAT) AS count_per_interval\r\n  FROM rtcm_packages\r\n  WHERE\r\n    $__timeFilter(receive_time)\r\n  GROUP BY mountpoint, minute\r\n) subquery\r\nINNER JOIN sourcetable_constants source ON subquery.mountpoint = source.mountpoint\r\nGROUP BY source.casterprovider, subquery.mountpoint\r\nORDER BY source.casterprovider, subquery.mountpoint\r\n\r\n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Data flow average [kB/s]",
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "UYgXEmhnz"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 9,
+        "x": 9,
+        "y": 9
+      },
+      "id": 65,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "UYgXEmhnz"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "group": [
+            {
+              "params": [
+                "1m",
+                "none"
+              ],
+              "type": "time"
+            }
+          ],
+          "metricColumn": "mountpoint",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroupAlias(receive_time,$__interval),\n  mountpoint AS metric,\n  SUM(rtcm_msg_size)/CAST($__interval_ms/1000 AS FLOAT)/8/1024 AS \"kB/s average over $__interval\"\nFROM rtcm_packages \nWHERE\n  $__timeFilter(receive_time)\nGROUP BY 1,2 \nORDER BY 1,2",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "rtcm_msg_size"
+                ],
+                "type": "column"
+              },
+              {
+                "params": [
+                  "sum"
+                ],
+                "type": "aggregate"
+              },
+              {
+                "params": [
+                  "rtcm_msg_size"
+                ],
+                "type": "alias"
+              }
+            ]
+          ],
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "rtcm_packages",
+          "timeColumn": "receive_time",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "title": "Data flow $__interval-average [kB/s]",
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -743,32 +710,24 @@
             "mode": "thresholds"
           },
           "custom": {
-            "fillOpacity": 70,
-            "lineWidth": 1
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
           },
-          "mappings": [
-            {
-              "options": {
-                ".*": {
-                  "color": "dark-red",
-                  "index": 0,
-                  "text": "Time_interval"
-                }
-              },
-              "type": "value"
-            }
-          ],
-          "max": -1,
+          "mappings": [],
+          "noValue": "No mountpoints disconnected in chosen time interval",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "dark-orange",
+                "color": "green",
                 "value": null
               },
               {
-                "color": "#EAB839",
-                "value": 0
+                "color": "red",
+                "value": 80
               }
             ]
           }
@@ -776,27 +735,25 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 9,
-        "w": 24,
+        "h": 8,
+        "w": 9,
         "x": 0,
-        "y": 26
+        "y": 17
       },
-      "id": 68,
+      "id": 73,
       "options": {
-        "colWidth": 0.95,
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": false
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
         },
-        "rowHeight": 0.9,
-        "showValue": "never",
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
+        "showHeader": true
       },
-      "pluginVersion": "9.3.6",
+      "pluginVersion": "9.5.19",
       "targets": [
         {
           "datasource": {
@@ -804,9 +761,9 @@
             "uid": "UYgXEmhnz"
           },
           "editorMode": "code",
-          "format": "time_series",
+          "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\r\n  $__timeGroupAlias(receive_time,$data_gap_interval),\r\n  mountpoint AS metric,\r\n  COUNT(rtcm_obs_epoch) AS \"epoch_obs\"\r\nFROM rtcm_packages\r\nWHERE\r\n  $__timeFilter(receive_time) AND\r\n  rtcm_msg_type IN (1077, 1087, 1097, 1117, 1127) AND\r\n  rtcm_obs_epoch IS NOT NULL and\r\n  rtcm_sat_count != 0\r\nGROUP BY 1,2\r\nORDER BY 1,2",
+          "rawSql": "SELECT\r\n  mountpoint as \"Mountpoint\",\r\n  disconnect_time as \"Disconnected at\",\r\n  reconnect_time as \"Reconnected at\",\r\n  to_char(coalesce(reconnect_time, CURRENT_TIMESTAMP)-disconnect_time, 'HH24:MI:SS') as \"Duration\"\r\nFROM connection_logger\r\nWHERE\r\n  $__timeFilter(disconnect_time) OR\r\n  $__timeFilter(reconnect_time) OR\r\n  reconnect_time IS NULL\r\nORDER BY disconnect_time DESC",
           "refId": "A",
           "sql": {
             "columns": [
@@ -827,8 +784,191 @@
           }
         }
       ],
-      "title": "Data gaps",
-      "type": "status-history"
+      "title": "Disconnected mountpoints",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "UYgXEmhnz"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false,
+            "width": 150
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 9,
+        "x": 9,
+        "y": 17
+      },
+      "id": 74,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "9.5.19",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "UYgXEmhnz"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT coord.mountpoint as \"Mountpoint\", source.casterprovider as \"Caster\", coord.ecef_x as \"X\", coord.ecef_y as \"Y\", coord.ecef_z as \"Z\", coord.anthgt as \"Antenna height\"\r\nFROM coordinates coord\r\nINNER JOIN rtcm_packages rtcm ON coord.rtcm_package_id = rtcm.rtcm_package_id\r\nINNER JOIN sourcetable_constants source ON coord.mountpoint = source.mountpoint\r\nORDER BY source.casterprovider, coord.mountpoint",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Coordinates [m]",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "UYgXEmhnz"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 25
+      },
+      "id": 55,
+      "options": {
+        "calculate": false,
+        "cellGap": 1,
+        "cellValues": {
+          "unit": "none"
+        },
+        "color": {
+          "exponent": 0.5,
+          "fill": "dark-orange",
+          "mode": "scheme",
+          "reverse": false,
+          "scale": "exponential",
+          "scheme": "Oranges",
+          "steps": 64
+        },
+        "exemplars": {
+          "color": "rgba(255,0,255,0.7)"
+        },
+        "filterValues": {
+          "le": 1e-9
+        },
+        "legend": {
+          "show": true
+        },
+        "rowsFrame": {
+          "layout": "auto",
+          "value": "Messages received"
+        },
+        "tooltip": {
+          "show": true,
+          "yHistogram": false
+        },
+        "yAxis": {
+          "axisPlacement": "left",
+          "reverse": false
+        }
+      },
+      "pluginVersion": "9.5.19",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "UYgXEmhnz"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\r\n  $__timeGroupAlias(receive_time,$__interval),\r\n  mountpoint AS metric,\r\n  COUNT(rtcm_obs_epoch) AS \"epoch_obs\"\r\nFROM rtcm_packages\r\nWHERE\r\n  $__timeFilter(receive_time) AND (\r\n  rtcm_msg_type BETWEEN 1071 AND 1077 OR\r\n  rtcm_msg_type BETWEEN 1081 AND 1087 OR\r\n  rtcm_msg_type BETWEEN 1091 AND 1097 OR\r\n  rtcm_msg_type BETWEEN 1121 AND 1127) AND\r\n  rtcm_obs_epoch IS NOT NULL and\r\n  rtcm_sat_count != 0\r\nGROUP BY 1,2\r\nORDER BY 1,2",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Data gaps in units of $__interval",
+      "type": "heatmap"
     },
     {
       "collapsed": false,
@@ -836,11 +976,11 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 35
+        "y": 34
       },
       "id": 33,
       "panels": [],
-      "title": "Latency Stations",
+      "title": "Latency",
       "type": "row"
     },
     {
@@ -889,7 +1029,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -904,7 +1045,7 @@
         "h": 12,
         "w": 24,
         "x": 0,
-        "y": 36
+        "y": 35
       },
       "id": 46,
       "options": {
@@ -928,7 +1069,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\r\n  DATE_TRUNC('minute', receive_time) AS time,\r\n  mountpoint AS metric,\r\n  AVG(MOD((EXTRACT(epoch FROM receive_time) + \r\n    CASE \r\n      WHEN rtcm_msg_type = 1077 THEN $GPSleapseconds\r\n      WHEN rtcm_msg_type = 1087 THEN $GLOleapseconds\r\n      WHEN rtcm_msg_type = 1097 THEN $GALleapseconds\r\n      WHEN rtcm_msg_type = 1117 THEN $QZZSleapseconds\r\n      WHEN rtcm_msg_type = 1127 THEN $BEIleapseconds\r\n      ELSE $GPSleapseconds\r\n    END)::NUMERIC(15,3),86400) - MOD((EXTRACT(epoch FROM rtcm_obs_epoch)),86400)) as value\r\nFROM rtcm_packages\r\nWHERE\r\n  $__timeFilter(receive_time) AND\r\n  rtcm_obs_epoch IS NOT NULL AND\r\n  rtcm_sat_count != 0\r\nGROUP BY 1,2\r\nORDER BY 1,2",
+          "rawSql": "SELECT\r\n  $__timeGroup(receive_time, $__interval) AS time,\r\n  mountpoint AS metric,\r\n  AVG(MOD((EXTRACT(epoch FROM receive_time) + \r\n    CASE \r\n      WHEN rtcm_msg_type BETWEEN 1071 AND 1077 THEN $GPSleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1081 AND 1087 THEN $GLOleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1091 AND 1097 THEN $GALleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1121 AND 1127 THEN $BEIleapseconds\r\n    END)::NUMERIC(15,3),86400) - MOD((EXTRACT(epoch FROM rtcm_obs_epoch)),86400)) as value\r\nFROM rtcm_packages\r\nWHERE\r\n  $__timeFilter(receive_time) AND\r\n  rtcm_obs_epoch IS NOT NULL AND\r\n  rtcm_sat_count != 0 AND (\r\n  rtcm_msg_type BETWEEN 1071 AND 1077 OR\r\n  rtcm_msg_type BETWEEN 1081 AND 1087 OR\r\n  rtcm_msg_type BETWEEN 1091 AND 1097 OR\r\n  rtcm_msg_type BETWEEN 1121 AND 1127)\r\nGROUP BY 1,2\r\nORDER BY 1,2",
           "refId": "A",
           "sql": {
             "columns": [
@@ -949,116 +1090,7 @@
           }
         }
       ],
-      "title": "Average latency [ALL/ min / all stats]",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "postgres",
-        "uid": "UYgXEmhnz"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green"
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 12,
-        "w": 24,
-        "x": 0,
-        "y": 48
-      },
-      "id": 69,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "postgres",
-            "uid": "UYgXEmhnz"
-          },
-          "editorMode": "code",
-          "format": "time_series",
-          "rawQuery": true,
-          "rawSql": "SELECT\r\n  receive_time AS time,\r\n  mountpoint AS metric,\r\n  MOD((EXTRACT(epoch FROM receive_time) + \r\n    CASE \r\n      WHEN rtcm_msg_type = 1077 THEN $GPSleapseconds\r\n      WHEN rtcm_msg_type = 1087 THEN $GLOleapseconds\r\n      WHEN rtcm_msg_type = 1097 THEN $GALleapseconds\r\n      WHEN rtcm_msg_type = 1117 THEN $QZZSleapseconds\r\n      WHEN rtcm_msg_type = 1127 THEN $BEIleapseconds\r\n      ELSE $GPSleapseconds\r\n    END)::NUMERIC(15,3),86400) - MOD((EXTRACT(epoch FROM rtcm_obs_epoch)),86400) as value\r\nFROM rtcm_packages\r\nWHERE\r\n  $__timeFilter(receive_time) AND\r\n  rtcm_obs_epoch IS NOT NULL AND\r\n  rtcm_sat_count != 0\r\nORDER BY 1,2",
-          "refId": "A",
-          "sql": {
-            "columns": [
-              {
-                "parameters": [],
-                "type": "function"
-              }
-            ],
-            "groupBy": [
-              {
-                "property": {
-                  "type": "string"
-                },
-                "type": "groupBy"
-              }
-            ],
-            "limit": 50
-          }
-        }
-      ],
-      "title": "Average latency [ALL/ min / all stats]",
+      "title": "Latency of MSM $__interval-average [s]",
       "type": "timeseries"
     },
     {
@@ -1076,7 +1108,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "#EAB839",
@@ -1095,7 +1128,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 60
+        "y": 47
       },
       "id": 51,
       "options": {
@@ -1120,7 +1153,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\r\n  MAX(receive_time) AS time,\r\n  mountpoint AS metric,\r\n  MAX(MOD((EXTRACT(epoch FROM receive_time) + \r\n    CASE \r\n      WHEN rtcm_msg_type = 1077 THEN $GPSleapseconds\r\n      WHEN rtcm_msg_type = 1087 THEN $GLOleapseconds\r\n      WHEN rtcm_msg_type = 1097 THEN $GALleapseconds\r\n      WHEN rtcm_msg_type = 1117 THEN $QZZSleapseconds\r\n      WHEN rtcm_msg_type = 1127 THEN $BEIleapseconds\r\n      ELSE $GPSleapseconds\r\n    END)::NUMERIC(15,3),86400) - MOD((EXTRACT(epoch FROM rtcm_obs_epoch)),86400)) as max_latency\r\nFROM rtcm_packages\r\nWHERE\r\n  receive_time >= NOW() - INTERVAL '60 minutes' AND\r\n  rtcm_obs_epoch IS NOT NULL AND\r\n  rtcm_sat_count != 0\r\nGROUP BY metric\r\nORDER BY time ASC",
+          "rawSql": "SELECT\r\n  MAX(receive_time) AS time,\r\n  mountpoint AS metric,\r\n  MAX(MOD((EXTRACT(epoch FROM receive_time) + \r\n    CASE \r\n      WHEN rtcm_msg_type BETWEEN 1071 AND 1077 THEN $GPSleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1081 AND 1087 THEN $GLOleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1091 AND 1097 THEN $GALleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1121 AND 1127 THEN $BEIleapseconds\r\n    END)::NUMERIC(15,3),86400) - MOD((EXTRACT(epoch FROM rtcm_obs_epoch)),86400)) as max_latency\r\nFROM rtcm_packages\r\nWHERE\r\n  $__timeFilter(receive_time) AND\r\n  rtcm_obs_epoch IS NOT NULL AND\r\n  rtcm_sat_count != 0 AND (\r\n  rtcm_msg_type BETWEEN 1071 AND 1077 OR\r\n  rtcm_msg_type BETWEEN 1081 AND 1087 OR\r\n  rtcm_msg_type BETWEEN 1091 AND 1097 OR\r\n  rtcm_msg_type BETWEEN 1121 AND 1127)\r\nGROUP BY metric\r\nORDER BY time ASC",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1141,7 +1174,7 @@
           }
         }
       ],
-      "title": "Max latency last 1 hour [All cons]",
+      "title": "Maximum latency of MSM [s]",
       "type": "gauge"
     },
     {
@@ -1159,7 +1192,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "#EAB839",
@@ -1178,7 +1212,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 60
+        "y": 47
       },
       "id": 52,
       "options": {
@@ -1203,7 +1237,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\r\n  MAX(receive_time) AS time,\r\n  mountpoint AS metric,\r\n  MIN(MOD((EXTRACT(epoch FROM receive_time) + \r\n    CASE \r\n      WHEN rtcm_msg_type = 1077 THEN $GPSleapseconds\r\n      WHEN rtcm_msg_type = 1087 THEN $GLOleapseconds\r\n      WHEN rtcm_msg_type = 1097 THEN $GALleapseconds\r\n      WHEN rtcm_msg_type = 1117 THEN $QZZSleapseconds\r\n      WHEN rtcm_msg_type = 1127 THEN $BEIleapseconds\r\n      ELSE $GPSleapseconds\r\n    END)::NUMERIC(15,3),86400) - MOD((EXTRACT(epoch FROM rtcm_obs_epoch)),86400)) as max_latency\r\nFROM rtcm_packages\r\nWHERE\r\n  receive_time >= NOW() - INTERVAL '60 minutes' AND\r\n  rtcm_obs_epoch IS NOT NULL AND\r\n  rtcm_sat_count != 0\r\nGROUP BY metric\r\nORDER BY time ASC",
+          "rawSql": "SELECT\r\n  MAX(receive_time) AS time,\r\n  mountpoint AS metric,\r\n  MIN(MOD((EXTRACT(epoch FROM receive_time) + \r\n    CASE \r\n      WHEN rtcm_msg_type BETWEEN 1071 AND 1077 THEN $GPSleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1081 AND 1087 THEN $GLOleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1091 AND 1097 THEN $GALleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1121 AND 1127 THEN $BEIleapseconds\r\n    END)::NUMERIC(15,3),86400) - MOD((EXTRACT(epoch FROM rtcm_obs_epoch)),86400)) as max_latency\r\nFROM rtcm_packages\r\nWHERE\r\n  $__timeFilter(receive_time) AND\r\n  rtcm_obs_epoch IS NOT NULL AND\r\n  rtcm_sat_count != 0 AND (\r\n  rtcm_msg_type BETWEEN 1071 AND 1077 OR\r\n  rtcm_msg_type BETWEEN 1081 AND 1087 OR\r\n  rtcm_msg_type BETWEEN 1091 AND 1097 OR\r\n  rtcm_msg_type BETWEEN 1121 AND 1127)\r\nGROUP BY metric\r\nORDER BY time ASC",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1224,11 +1258,11 @@
           }
         }
       ],
-      "title": "minimum latency last 1 hour [all cons]",
+      "title": "Minimum latency of MSM [s]",
       "type": "gauge"
     }
   ],
-  "refresh": false,
+  "refresh": "1m",
   "schemaVersion": 38,
   "style": "dark",
   "tags": [],
@@ -1273,100 +1307,11 @@
         "query": "4",
         "skipUrlSync": false,
         "type": "constant"
-      },
-      {
-        "auto": true,
-        "auto_count": 500,
-        "auto_min": "10s",
-        "current": {
-          "selected": false,
-          "text": "10s",
-          "value": "10s"
-        },
-        "hide": 0,
-        "label": "Data gap interval",
-        "name": "data_gap_interval",
-        "options": [
-          {
-            "selected": false,
-            "text": "auto",
-            "value": "$__auto_interval_data_gap_interval"
-          },
-          {
-            "selected": true,
-            "text": "10s",
-            "value": "10s"
-          },
-          {
-            "selected": false,
-            "text": "20s",
-            "value": "20s"
-          },
-          {
-            "selected": false,
-            "text": "30s",
-            "value": "30s"
-          },
-          {
-            "selected": false,
-            "text": "1m",
-            "value": "1m"
-          },
-          {
-            "selected": false,
-            "text": "5m",
-            "value": "5m"
-          },
-          {
-            "selected": false,
-            "text": "15m",
-            "value": "15m"
-          },
-          {
-            "selected": false,
-            "text": "30m",
-            "value": "30m"
-          },
-          {
-            "selected": false,
-            "text": "1h",
-            "value": "1h"
-          },
-          {
-            "selected": false,
-            "text": "2h",
-            "value": "2h"
-          },
-          {
-            "selected": false,
-            "text": "4h",
-            "value": "4h"
-          },
-          {
-            "selected": false,
-            "text": "6h",
-            "value": "6h"
-          },
-          {
-            "selected": false,
-            "text": "12h",
-            "value": "12h"
-          },
-          {
-            "selected": false,
-            "text": "1d",
-            "value": "1d"
-          }
-        ],
-        "query": "10s, 20s, 30s, 1m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 12h, 1d",
-        "refresh": 2,
-        "skipUrlSync": false,
-        "type": "interval"
       }
     ]
   },
   "time": {
-    "from": "now-15m",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {
@@ -1383,6 +1328,6 @@
   "timezone": "",
   "title": "RTCM overview",
   "uid": "fuzCpN4Iz724",
-  "version": 3,
+  "version": 1,
   "weekStart": ""
 }

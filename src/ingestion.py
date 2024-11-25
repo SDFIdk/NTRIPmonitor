@@ -34,11 +34,9 @@ import asyncpg
 from ntripclient import NtripClients
 from settings import CasterSettings, DbSettings, MultiprocessingSettings
 import decoderclasses
-from databasehandling import DatabaseHandler
 from loghandler import NtripLogHandler
 from rtcm3 import Rtcm3
-# from psycopg2 import Error, connect, extras
-# from asyncpg import Connection, connect, exceptions as asyncpg_exceptions
+
 
 def procSigint(signum: int, frame: typing.types.FrameType) -> None:
     logging.warning("Received SIGINT. Shutting down, Adjø!")
@@ -50,18 +48,22 @@ def procSigterm(signum: int, frame: typing.types.FrameType) -> None:
     exit(4)
 
 
-async def watchdogHandler(casterSettingsDict: dict, mountPointList: list, tasks: dict, sharedEncoded: list, lock) -> None:
+async def watchdogHandler(
+    casterSettingsDict: dict,
+    mountPointList: list,
+    tasks: dict,
+    sharedEncoded: list,
+    lock,
+) -> None:
     while True:
         await asyncio.sleep(30)  # Sleep for 30 seconds
 
         runningTasks = asyncio.all_tasks()
-        runningTasks = [task for task in runningTasks if task.get_name() != 'watchdog']
+        runningTasks = [task for task in runningTasks if task.get_name() != "watchdog"]
         runningTaskNames = [runningTask.get_name() for runningTask in runningTasks]
 
         if len(runningTasks) <= len(mountPointList):
-            logging.debug(
-                f"{runningTaskNames} tasks running, {mountPointList} wanted."
-            )
+            logging.debug(f"{runningTaskNames} tasks running, {mountPointList} wanted.")
             # For each desired task
             for wantedTask in mountPointList:
                 casterId, mountpoint = wantedTask
@@ -79,67 +81,10 @@ async def watchdogHandler(casterSettingsDict: dict, mountPointList: list, tasks:
                     )
                     logging.warning(f"{mountpoint} RTCM stream restarted.")
 
-"""
-async def dbInsertBatch(
-    dbConnection,
-    dbSettings: DbSettings,
-    decodedFrames: list,
-    decodedObs: None,
-    tableList: None,
-) -> None:
-    try:
-        rtcmPackageIds = await dbInsertRtcmInfoStoredBatch(dbConnection, decodedFrames)
-        if dbSettings.storeObservations:
-            await dbInsertObsInfoStoredBatch(
-                dbConnection, decodedObs, rtcmPackageIds, tableList
-            )
-    except Exception as error:
-        logging.error(f"Failed to insert and commit data to database with: {error}")
-    return
 
-
-async def dbInsertRtcmInfoStoredBatch(dbConnection, decodedFrames: list) -> list:
-    # print("Inserting RTCM info")
-    try:
-        # Convert the data to JSON
-        decodedFramesJson = json.dumps(decodedFrames)
-        # Call the stored procedure
-        rtcmPackageIds = await dbConnection.fetchval(
-            "SELECT insert_rtcm_packages($1::json)", decodedFramesJson
-        )
-    except Exception as error:
-        # Log an error message if the insertion fails
-        logging.error(f"Failed to insert and commit rtcm data to database with: {error}")
-    return rtcmPackageIds
-
-
-async def dbInsertObsInfoStoredBatch(
-    dbConnection, decodedObs: list, rtcmPackageIds: list, tableList: list
-) -> list:
-    for index, decodedObsFrame in enumerate(decodedObs):
-        if decodedObsFrame is None:
-            continue
-        rtcmId = rtcmPackageIds[index]
-        try:
-            decodedObsFrame = [(rtcmId, *obsFrame) for obsFrame in decodedObsFrame]
-        except Exception as error:
-            logging.error(f"Error frame in iterable: {error} with frame {decodedObsFrame}")
-        try:
-            decodedObsFrameJson = json.dumps(decodedObsFrame)
-            await dbConnection.execute(
-                f"SELECT insert_{tableList[index]}_observations($1::json)",
-                decodedObsFrameJson,
-            )
-        except Exception as error:
-            logging.error(f"Failed to insert and commit obs data to database with: {error}")
-    return None
-"""
 def clearList(sharedList):
     del sharedList[:]
-    
-import asyncio
-import logging
-from time import sleep
+
 
 async def decodeInsertConsumer(
     sharedEncoded,
@@ -168,9 +113,13 @@ async def decodeInsertConsumer(
                         f"{dbSettings.database}@{dbSettings.host} "
                         f"with error: {error}"
                     )
-                    logging.error(f"Will retry database connection in {sleepTime} seconds!")
+                    logging.error(
+                        f"Will retry database connection in {sleepTime} seconds!"
+                    )
                     await asyncio.sleep(sleepTime)
-            logging.info(f"Connected to database: {dbSettings.database}@{dbSettings.host}.")
+            logging.info(
+                f"Connected to database: {dbSettings.database}@{dbSettings.host}."
+            )
         try:
             while True:
                 await asyncio.sleep(checkInterval)
@@ -181,17 +130,25 @@ async def decodeInsertConsumer(
                     clearList(sharedEncoded)
                     lock.release()
                     # Loop over all encoded frames and decode and insert the data
-                    logging.debug(f"Decoding {len(encodedFramesList)} sets of frames with a total of {sum(len(frames) for frames in encodedFramesList)} frames.")
+                    logging.debug(
+                        f"Decoding {len(encodedFramesList)} sets of frames with a total of {sum(len(frames) for frames in encodedFramesList)} frames."
+                    )
                     for encodedFrames in encodedFramesList:
                         try:
-                            decodedFrames, decodedObs, tableList = await decoderclasses.Decoder.batchDecodeFrame(
+                            (
+                                decodedFrames,
+                                decodedObs,
+                                tableList,
+                            ) = await decoderclasses.Decoder.batchDecodeFrame(
                                 encodedFrames, dbSettings.storeObservations, rtcmMessage
                             )
                             await dBHandler.dbInsertBatch(
                                 dbSettings, decodedFrames, decodedObs, tableList
                             )
                         except Exception as error:
-                            logging.error(f"An error occurred while batch decoding or batch inserting: {error}")
+                            logging.error(
+                                f"An error occurred while batch decoding or batch inserting: {error}"
+                            )
         except Exception as error:
             logging.error(f"An error occurred while decoding and appending {error}")
             lock.release()
@@ -201,10 +158,11 @@ async def decodeInsertConsumer(
             if dBHandler:
                 await dBHandler.closePool()
 
+
 def mountpointSplitter(casterSettingsDict: dict, maxProcesses: int) -> list:
     """
     Used to split the mountpoints into chunks based on the number of processes to be run.
-    Each chunk will run on its own core. 
+    Each chunk will run on its own core.
 
     Args:
         casterSettingsDict (dict): Dictionary of Caster settings
@@ -213,50 +171,83 @@ def mountpointSplitter(casterSettingsDict: dict, maxProcesses: int) -> list:
     Returns:
         list: lists of lists of tuples, where each tuple contains a mountpoint and its caster ID
     """
+
+    class Caster:
+        def __init__(self, name: str, mountpoints_unallocated: list[str]):
+            self.name = name
+            self.mountpoints_unallocated = mountpoints_unallocated
+            self.mountpoints_allocated = []
+
+    def n_unallocated(caster: Caster) -> int:
+        return len(caster.mountpoints_unallocated)
+
+    class Process:
+        def __init__(self, id: int):
+            self.id = id
+            self.chunks = []
+
+    def n_chunks(process: Process) -> int:
+        return len(process.chunks)
+
+    def allocate(caster: Caster, process: Process, to_allocate: int) -> None:
+
+        mountpoints_to_allocate = caster.mountpoints_unallocated[:to_allocate]
+
+        caster.mountpoints_unallocated = list(
+            set(caster.mountpoints_unallocated) - set(mountpoints_to_allocate)
+        )
+        caster.mountpoints_allocated = (
+            caster.mountpoints_allocated + mountpoints_to_allocate
+        )
+
+        new_chunks = [
+            [caster.name, mountpoint] for mountpoint in mountpoints_to_allocate
+        ]
+        logging.debug(f"Allocating {new_chunks} to process {process.id}")
+
+        process.chunks = process.chunks + new_chunks
+
     try:
-        totalMountpoints = sum(len(caster.mountpoints) for caster in casterSettingsDict.values())
+        total_mountpoints = sum(
+            len(caster.mountpoints) for caster in casterSettingsDict.values()
+        )
+        remaining_mountpoints = total_mountpoints
 
-        casterProcesses = []
-        for casterId, caster in casterSettingsDict.items(): 
-            processes = len(caster.mountpoints) / totalMountpoints * maxProcesses
-            casterProcesses.append((casterId, processes))
+        process_capacity = math.ceil(total_mountpoints / maxProcesses)
 
-        casters = list(casterSettingsDict.items())
-        casters.sort(key=lambda caster: len(caster[1].mountpoints)) 
-        groupedCasters = []
-        group = []
-        groupTotal = 0
-        for i, (casterId, caster) in enumerate(casters):  
-            if groupTotal + len(caster.mountpoints) / totalMountpoints < 1.0:
-                group.append((casterId, caster))  
-                groupTotal += len(caster.mountpoints) / totalMountpoints
-            else:
-                groupedCasters.append((group, max(1, groupTotal)))
-                group = [(casterId, caster)]  
-                groupTotal = len(caster.mountpoints) / totalMountpoints
-        if group:
-            groupedCasters.append((group, max(1, groupTotal)))
+        casters = [
+            Caster(casterId, caster.mountpoints)
+            for casterId, caster in casterSettingsDict.items()
+        ]
+        processes = [Process(id) for id in range(maxProcesses)]
 
-        decimalParts = [groupTotal - int(groupTotal) for group, groupTotal in groupedCasters]
-        remainingProcesses = maxProcesses - sum(int(groupTotal) for group, groupTotal in groupedCasters)
-        for i in sorted(range(len(decimalParts)), key=lambda i: decimalParts[i], reverse=True)[:remainingProcesses]:
-            groupedCasters[i] = (groupedCasters[i][0], groupedCasters[i][1] + 1)
+        while remaining_mountpoints > 0:
+            logging.debug(f"Remaining_mountpoints {remaining_mountpoints}")
+            caster_most_unallocated = max(casters, key=n_unallocated)
+            logging.debug(
+                f"casters {[(caster.name, n_unallocated(caster)) for caster in casters]}"
+            )
+            process_most_free = min(processes, key=n_chunks)
+            logging.debug(
+                f"processes {[(process.id, n_chunks(process)) for process in processes]}"
+            )
 
-        chunks = []
-        for group, groupTotal in groupedCasters:
-            processes = int(groupTotal)
-            for casterId, caster in group:  
-                chunkSize = len(caster.mountpoints) // processes
-                remainder = len(caster.mountpoints) % processes
-                for i in range(processes):
-                    end = (i + 1) * chunkSize + min(i, remainder)
-                    chunk = [(casterId, mp) for mp in caster.mountpoints[i * chunkSize:end]]  
-                    chunks.append(chunk)
+            to_allocate = min(
+                n_unallocated(caster_most_unallocated),
+                process_capacity - n_chunks(process_most_free),
+            )
 
-        return chunks
+            allocate(caster_most_unallocated, process_most_free, to_allocate)
+
+            remaining_mountpoints = remaining_mountpoints - to_allocate
+
+        chunks = [process.chunks for process in processes]
     except Exception as e:
         logging.error(f"Failed to split mountpoints with Error: {e}")
-        return []
+        chunks = []
+
+    return chunks
+
 
 async def appendToList(listToAppend, sharedList, lock):
     loop = asyncio.get_event_loop()
@@ -268,17 +259,26 @@ async def appendToList(listToAppend, sharedList, lock):
     finally:
         lock.release()
 
-async def periodicFrameAppender(encodedFrames, sharedEncoded, lock, mountPoint, checkInterval=0.05):
+
+async def periodicFrameAppender(
+    encodedFrames, sharedEncoded, lock, mountPoint, checkInterval=0.05
+):
     while True:
-        await asyncio.sleep(checkInterval)  # Wait for a short period to avoid hogging the CPU
-        if encodedFrames and (time() - encodedFrames[-1]['timeStampInFrame']) > 0.05:
-            logging.debug(f"{mountPoint}: {len(encodedFrames)} frames collected. append to shared.")
+        await asyncio.sleep(
+            checkInterval
+        )  # Wait for a short period to avoid hogging the CPU
+        if encodedFrames and (time() - encodedFrames[-1]["timeStampInFrame"]) > 0.05:
+            logging.debug(
+                f"{mountPoint}: {len(encodedFrames)} frames collected. append to shared."
+            )
             try:
                 await appendToList(encodedFrames[:], sharedEncoded, lock)
                 encodedFrames.clear()
             except Exception as error:
-                logging.error(f"An error occurred in periodic check for appending frames: {error}")
-                
+                logging.error(
+                    f"An error occurred in periodic check for appending frames: {error}"
+                )
+
 
 async def procRtcmStream(
     casterSettings: CasterSettings,
@@ -290,20 +290,35 @@ async def procRtcmStream(
     retry: int = 3,
 ) -> None:
     ntripclient = NtripClients()
-    ntripLogger = NtripLogHandler() 
-    ntripclient = await ntripLogger.requestStream(ntripclient, casterSettings, dbSettings, mountPoint, log_disconnect=False)
+    ntripLogger = NtripLogHandler()
+    ntripclient = await ntripLogger.requestStream(
+        ntripclient, casterSettings, dbSettings, mountPoint, log_disconnect=False
+    )
     encodedFrames = []
-    
-    asyncio.create_task(periodicFrameAppender(encodedFrames, sharedEncoded, lock, mountPoint))
-    
+
+    asyncio.create_task(
+        periodicFrameAppender(encodedFrames, sharedEncoded, lock, mountPoint)
+    )
+
     while True:
         try:
-            rtcmFrame, timeStamp = await ntripclient.getRtcmFrame()
-            encodedFrames.append({'frame': rtcmFrame, 'timeStampInFrame': timeStamp, 'messageSize': len(rtcmFrame), 'mountPoint': mountPoint})
+            frames_in_buffer, timeStamp = await ntripclient.getRtcmFrame()
+            for rtcmFrame in frames_in_buffer:
+                encodedFrames.append(
+                    {
+                        "frame": rtcmFrame,
+                        "timeStampInFrame": timeStamp,
+                        "messageSize": len(rtcmFrame),
+                        "mountPoint": mountPoint,
+                    }
+                )
             if fail > 0:
                 fail = 0
         except (ConnectionError, IOError, IndexError):
-            ntripclient = await ntripLogger.requestStream(ntripclient, casterSettings, dbSettings, mountPoint, log_disconnect=True)
+            ntripclient = await ntripLogger.requestStream(
+                ntripclient, casterSettings, dbSettings, mountPoint, log_disconnect=True
+            )
+
 
 async def rtcmStreamTasks(
     casterSettingsDict: dict,
@@ -328,7 +343,9 @@ async def rtcmStreamTasks(
         )
 
     # Create the watchdog task
-    tasks['watchdog'] = asyncio.create_task(watchdogHandler(casterSettingsDict, mountPointList, tasks, sharedEncoded, lock))
+    tasks["watchdog"] = asyncio.create_task(
+        watchdogHandler(casterSettingsDict, mountPointList, tasks, sharedEncoded, lock)
+    )
 
     # Wait for each task to complete
     await asyncio.gather(*tasks.values())
@@ -356,7 +373,7 @@ async def getMountpoints(
     mountpoints = []
 
     # Try to request the source table from the caster
-    logging.info('Requesting source table from caster for mountpoint information')
+    logging.info("Requesting source table from caster for mountpoint information")
     try:
         sourceTable = await ntripclient.requestSourcetable(casterSettings.casterUrl)
     # If a connection error occurs, log an error message, wait, and retry
@@ -369,7 +386,7 @@ async def getMountpoints(
         asyncio.sleep(sleepTime)
     # If an unknown error occurs, log an error message and abort monitoring
     except Exception as error:
-        logging.error(f"Unknown error : {error}")
+        logging.error(f"Unknown error: {error}")
     # If the source table is successfully retrieved, extract the mountpoints
     else:
         for row in sourceTable:
@@ -379,6 +396,7 @@ async def getMountpoints(
                 mountpoints.append(sourceCols[1])
         return mountpoints
 
+
 def reduceCasterDict(casterSettingsDict: dict, casterStatus: list) -> dict:
     reducedCasterSettingsDict = {}
     for caster, status in zip(casterSettingsDict.keys(), casterStatus):
@@ -386,10 +404,15 @@ def reduceCasterDict(casterSettingsDict: dict, casterStatus: list) -> dict:
             reducedCasterSettingsDict[caster] = casterSettingsDict[caster]
     return reducedCasterSettingsDict
 
+
 async def downloadSourceTable(
-    casterSettingsDict: dict, dbSettings: DbSettings, sleepTime: int = 10, fail: int = 0, retry: int = 3
+    casterSettingsDict: dict,
+    dbSettings: DbSettings,
+    sleepTime: int = 10,
+    fail: int = 0,
+    retry: int = 3,
 ) -> list[list[str]]:
-    """ Reads the sourcetable and inserts relevant metadata for the mountpoints
+    """Reads the sourcetable and inserts relevant metadata for the mountpoints
     into the database. Done for efficient viewing and handling of metadata when
     visualizing the data.
     """
@@ -402,20 +425,27 @@ async def downloadSourceTable(
         if caster == "Empty":
             logging.info(f"Skipping caster {g}: {caster}.")
             continue
-        logging.info("Requesting source table from caster for mountpoint information")
-        logging.info(f"name : {caster}")
-        logging.info(f"Requesting source table from caster: {casterSettings.casterUrl}")
+        logging.info(
+            f"Requesting source table from caster {caster} for mountpoint information at {casterSettings.casterUrl}"
+        )
         while True:
             try:
-                sourceTable = await ntripclient.requestSourcetable(casterSettings.casterUrl)
-                logging.info(f"Source table received from {casterSettings.casterUrl}")
+                sourceTable = await ntripclient.requestSourcetable(
+                    casterSettings.casterUrl
+                )
+                logging.info(f"Source table received for caster {caster}.")
                 for row in sourceTable:
                     sourceCols = row.split(sep=";")
                     # If the row represents a stream (STR), add the mountpoint to the list
                     if sourceCols[0] == "STR":
-                        mountpoints.append([sourceCols[1], caster] + [sourceCols[i] for i in [2,3,8,9,10,13]])
-                casterStatus[g-1] = 1  # Set the status to 1 if the caster is active
-                logging.info(f"Found {len(mountpoints)} mountpoints in the source table.")
+                        mountpoints.append(
+                            [sourceCols[1], caster]
+                            + [sourceCols[i] for i in [2, 3, 8, 9, 10, 13]]
+                        )
+                casterStatus[g - 1] = 1  # Set the status to 1 if the caster is active
+                logging.info(
+                    f"Found {len(mountpoints)} mountpoints in the source table."
+                )
                 break  # If the source table is successfully received, break the loop
             except Exception as error:
                 fail += 1
@@ -423,18 +453,25 @@ async def downloadSourceTable(
                 if sleepTime > 300:
                     sleepTime = 300
                 logging.error(
-                    f"{fail} failed attempt to NTRIP connect to {casterSettings.casterUrl}. "
-                    "Will retry in f{sleepTime} seconds."
+                    f"{fail} failed attempt to NTRIP connect to {casterSettings.casterUrl}. Will retry in {sleepTime} seconds."
                 )
-                if fail > retry:  # If fail is greater than 5, break the loop
-                    logging.info(f" Attempted to connect to {casterSettings.casterUrl} {retry} times without success. Skipping caster.")
+                if (
+                    fail > retry
+                ):  # If fail is greater than retry (default value 3), break the loop
+                    logging.info(
+                        f" Attempted to connect to {casterSettings.casterUrl} {retry} times without success. Skipping caster."
+                    )
                     break
     seenMountpoints = {}
     for mountpoint in mountpoints:
         if mountpoint[0] in seenMountpoints:
             logging.info("Warning : Duplicate mountpoint found.")
-            logging.info(f"Duplicate mountpoint found: Name - {mountpoint[0]}, Caster - {mountpoint[1]}, Location - {mountpoint[2]}, Country Code - {mountpoint[4]}")
-            logging.info(f"Original mountpoint: Name - {seenMountpoints[mountpoint[0]][0]}, Caster - {seenMountpoints[mountpoint[0]][1]}, Location - {seenMountpoints[mountpoint[0]][2]}, Country Code - {seenMountpoints[mountpoint[0]][4]}")
+            logging.info(
+                f"Duplicate mountpoint found: Name - {mountpoint[0]}, Caster - {mountpoint[1]}, Location - {mountpoint[2]}, Country Code - {mountpoint[4]}"
+            )
+            logging.info(
+                f"Original mountpoint: Name - {seenMountpoints[mountpoint[0]][0]}, Caster - {seenMountpoints[mountpoint[0]][1]}, Location - {seenMountpoints[mountpoint[0]][2]}, Country Code - {seenMountpoints[mountpoint[0]][4]}"
+            )
         else:
             seenMountpoints[mountpoint[0]] = mountpoint
     while True:
@@ -464,10 +501,13 @@ async def downloadSourceTable(
         )
     except Exception as e:
         logging.error(f"Error inserting data: {e}")
-    logging.debug(f"Inserted {len(mountpoints)} mountpoints metadata into the database.")
+    logging.debug(
+        f"Inserted {len(mountpoints)} mountpoints metadata into the database."
+    )
     if dbConnection:
         await dbConnection.close()
     return casterStatus
+
 
 def loadCasterSettings():
     load_dotenv()  # Load environment variables from .env file
@@ -490,7 +530,9 @@ def loadCasterSettings():
             casterInstance.casterUrl = os.getenv(caster_url_key, "")
             casterInstance.user = os.getenv(caster_user_key, "")
             casterInstance.password = os.getenv(caster_password_key, "")
-            casterInstance.mountpoints = list(map(str.strip, os.getenv(caster_mountpoint_key, "").split(",")))
+            casterInstance.mountpoints = list(
+                map(str.strip, os.getenv(caster_mountpoint_key, "").split(","))
+            )
             if casterInstance.mountpoints == [""]:
                 casterInstance.mountpoints = []
             # Create a CasterSettings object and add it to the dictionary
@@ -517,6 +559,7 @@ async def dbConnect(dbSettings: DbSettings):
     )
     return connection
 
+
 async def waitDbConnection(dbSettings: DbSettings):
     while True:
         try:
@@ -529,71 +572,150 @@ async def waitDbConnection(dbSettings: DbSettings):
             sleep(3)
     logging.info("Database is initialized. Initializing the monitor system.")
 
-def initializationLogger(casterSettingsDict, dbSettings: DbSettings, processingSettings: MultiprocessingSettings):
+
+def initializationLogger(
+    casterSettingsDict,
+    dbSettings: DbSettings,
+    processingSettings: MultiprocessingSettings,
+):
     logMessages = [
         "----------------------------- Multiprocessing Settings -----------------------------",
         f"Multiprocessing active: {processingSettings.multiprocessingActive}",
     ]
 
     if processingSettings.multiprocessingActive:
-        logMessages.extend([
-            "  - Multiprocessing is active. Multi-core setup.",
-            f"  - Maximum reading processes: {processingSettings.maxReaders}",
-            f"  - Readers per Decoder: {processingSettings.readersPerDecoder}",
-            f"  - Database insertion frequency (s): {processingSettings.clearCheck} s (WIP)",
-            f"  - Processing Append frequency (s): {processingSettings.appendCheck} s (WIP)",
-        ])
+        logMessages.extend(
+            [
+                "  - Multiprocessing is active. Multi-core setup.",
+                f"  - Maximum reading processes: {processingSettings.maxReaders}",
+                f"  - Readers per Decoder: {processingSettings.readersPerDecoder}",
+                f"  - Database insertion frequency (s): {processingSettings.clearCheck} s (WIP)",
+                f"  - Processing Append frequency (s): {processingSettings.appendCheck} s (WIP)",
+            ]
+        )
     else:
-        logMessages.extend([
-            "  - Multiprocessing is inactive. Single core setup.",
-            "  - Maximum reading processes: Inactive",
-            "  - Readers per Decoder: Inactive",
-            f"  - Database insertion frequency (s): {processingSettings.clearCheck} s (WIP)",
-            f"  - Processing Append frequency (s): {processingSettings.appendCheck} s (WIP)",
-        ])
+        logMessages.extend(
+            [
+                "  - Multiprocessing is inactive. Single core setup.",
+                "  - Maximum reading processes: Inactive",
+                "  - Readers per Decoder: Inactive",
+                f"  - Database insertion frequency (s): {processingSettings.clearCheck} s (WIP)",
+                f"  - Processing Append frequency (s): {processingSettings.appendCheck} s (WIP)",
+            ]
+        )
 
-    logMessages.extend([
-        "----------------------------- Caster Settings -----------------------------",
-        f"Number of casters: {len(casterSettingsDict)}",
-    ])
+    logMessages.extend(
+        [
+            "----------------------------- Caster Settings -----------------------------",
+            f"Number of casters: {len(casterSettingsDict)}",
+        ]
+    )
 
     for i, (caster, settings) in enumerate(casterSettingsDict.items(), start=1):
-        logMessages.extend([
-            "-------------------------------------",
-            f"Caster {i}: {caster}",
-            f"Caster URL: {settings.casterUrl}",
-            f"Number of mountpoints : {len(settings.mountpoints)}",
-        ])
+        logMessages.extend(
+            [
+                "-------------------------------------",
+                f"Caster {i}: {caster}",
+                f"Caster URL: {settings.casterUrl}",
+                f"Number of mountpoints : {len(settings.mountpoints)}",
+            ]
+        )
 
-    logMessages.extend([
-        "----------------------------- Database Settings -----------------------------",
-        f"Database : {dbSettings.database}",
-        f"Host & Port : {dbSettings.host}:{dbSettings.port}",
-        f"Store observations : {dbSettings.storeObservations}",
-    ])
-    
+    logMessages.extend(
+        [
+            "----------------------------- Database Settings -----------------------------",
+            f"Database : {dbSettings.database}",
+            f"Host & Port : {dbSettings.host}:{dbSettings.port}",
+            f"Store observations : {dbSettings.storeObservations}",
+        ]
+    )
+
     if dbSettings.storeObservations:
-        logMessages.extend([
-            "----------------------- NOTE -----------------------",
-            "Observables are set to be stored. Expect large data quantities.",
-            "Recommended to use less frequent database and list append frequencies.",
-        ])
-    logMessages.extend(["---------------------------------------------------",
-                        "Initializing the monitor system with above settings."])
-    logging.info('\n'.join(logMessages))    
+        logMessages.extend(
+            [
+                "----------------------- NOTE -----------------------",
+                "Observables are set to be stored. Expect large data quantities.",
+                "Recommended to use less frequent database and list append frequencies.",
+            ]
+        )
+    logMessages.extend(
+        [
+            "---------------------------------------------------",
+            "Initializing the monitor system with above settings.",
+        ]
+    )
+    logging.info("\n".join(logMessages))
     return None
 
-def runRtcmStreamTasks(casterSettingsDict: dict,dbSettings: DbSettings, mountpointChunk, sharedEncoded, lock):
-    asyncio.run(rtcmStreamTasks(casterSettingsDict, dbSettings, mountpointChunk, sharedEncoded, lock))
 
-def runDecodeInsertConsumer(sharedEncoded, dbSettings: DbSettings, lock):
-    asyncio.run(decodeInsertConsumer(sharedEncoded, dbSettings, lock))
+class parallelProcess:
+    def start(self) -> None:
+        try:
+            self.process.close()
+        except ValueError:
+            logging.error(f"Process {self.process.pid} still running.")
+            return
+        except AttributeError:
+            pass
 
-def RunMultiProcessing(casterSettingsDict: dict, dbSettings: DbSettings, processingSettings: MultiprocessingSettings):
-    mountpointChunks = mountpointSplitter(casterSettingsDict,processingSettings.maxReaders)
+        self.process = Process(target=self.run)
+        self.process.start()
+
+    def join(self) -> None:
+        self.process.join()
+
+
+class readerProcess(parallelProcess):
+    def __init__(
+        self,
+        casterSettingsDict: dict,
+        dbSettings: DbSettings,
+        mountpointChunk: list,
+        sharedEncoded,
+        lock: Lock,
+    ):
+        self.caster = casterSettingsDict
+        self.database = dbSettings
+        self.mountpoints = mountpointChunk
+        self.shared = sharedEncoded
+        self.lock = lock
+
+    def run(self):
+        asyncio.run(
+            rtcmStreamTasks(
+                self.caster, self.database, self.mountpoints, self.shared, self.lock
+            )
+        )
+
+    def __repr__(self):
+        return f"Reader with shared memory {hex(id(self.shared))} of mountpoints {self.mountpoints}"
+
+
+class decoderProcess(parallelProcess):
+    def __init__(self, dbSettings: DbSettings, sharedEncoded, lock: Lock):
+        self.database = dbSettings
+        self.shared = sharedEncoded
+        self.lock = lock
+
+    def run(self):
+        asyncio.run(decodeInsertConsumer(self.shared, self.database, self.lock))
+
+    def __repr__(self):
+        return f"Decoder with shared memory {hex(id(self.shared))}"
+
+
+def RunMultiProcessing(
+    casterSettingsDict: dict,
+    dbSettings: DbSettings,
+    processingSettings: MultiprocessingSettings,
+):
+    mountpointChunks = mountpointSplitter(
+        casterSettingsDict, processingSettings.maxReaders
+    )
+    logging.debug(f"Mountpoint chunks: {mountpointChunks}")
     numberReaders = min(processingSettings.maxReaders, len(mountpointChunks))
     numberDecoders = math.ceil(numberReaders // processingSettings.readersPerDecoder)
-    
+
     logging.info(f"Starting {numberReaders} readers and {numberDecoders} decoders.")
     with Manager() as manager:
         sharedEncodedList = [manager.list() for _ in range(numberDecoders)]
@@ -602,30 +724,64 @@ def RunMultiProcessing(casterSettingsDict: dict, dbSettings: DbSettings, process
         for i, mountpointChunk in enumerate(mountpointChunks):
             sharedEncoded = sharedEncodedList[i // processingSettings.readersPerDecoder]
             lock = lockList[i // processingSettings.readersPerDecoder]
-            logging.info(f"Starting process {i+1} with {len(mountpointChunk)} mountpoints:"
-                            f"{[t[1] for t in mountpointChunk]}")
-            readingProcess = Process(target=runRtcmStreamTasks, args=(casterSettingsDict, dbSettings, mountpointChunk, sharedEncoded, lock))
+            readingProcess = readerProcess(
+                casterSettingsDict,
+                dbSettings,
+                mountpointChunk,
+                sharedEncoded,
+                lock,
+            )
+            logging.info(
+                f"Starting process {i+1} with {len(mountpointChunk)} mountpoints:"
+                f"{[t[1] for t in mountpointChunk]}: {readingProcess}"
+            )
             readingProcesses.append(readingProcess)
 
         decoderProcesses = []
         for sharedEncoded, lock in zip(sharedEncodedList, lockList):
-            decoderProcess = Process(target=runDecodeInsertConsumer, args=(sharedEncoded, dbSettings, lock))
-            decoderProcesses.append(decoderProcess)
+            decodingProcess = decoderProcess(dbSettings, sharedEncoded, lock)
+            decoderProcesses.append(decodingProcess)
 
         for readingProcess in readingProcesses:
             readingProcess.start()
-        for decoderProcess in decoderProcesses:
-            decoderProcess.start()
+        for decodingProcess in decoderProcesses:
+            decodingProcess.start()
+
+        # here we introduce a watcher
+        logging.info(
+            f"Introducing watcher for {readingProcesses + decoderProcesses}"
+        )
+        while True:
+            # Wait 300 seconds between checking processes for aliveness
+            sleep(300)
+
+            for proc in readingProcesses + decoderProcesses:
+                exitcode = proc.process.exitcode
+                logging.debug(
+                    f"Checking process {proc} {proc.process} which has exit_code {exitcode}."
+                )
+                if exitcode is not None:
+                    logging.warning(
+                        f"Restarting process {proc} {proc.process} with un-expected exit_code {exitcode}."
+                    )
+                    proc.start()
+
         for readingProcess in readingProcesses:
             readingProcess.join()
-        for decoderProcess in decoderProcesses:
-            decoderProcess.join()
-    
+        for decodingProcess in decoderProcesses:
+            decodingProcess.join()
+
+
 def runSingleProcessing(casterSettingsDict: dict, dbSettings: DbSettings):
     # Code removed from current release. will be added back late June.
     return None
 
-def main(casterSettingsDict: dict, dbSettings: DbSettings, processingSettings: MultiprocessingSettings):
+
+def main(
+    casterSettingsDict: dict,
+    dbSettings: DbSettings,
+    processingSettings: MultiprocessingSettings,
+):
     """
     The main function that sets up signal handlers and starts the RTCM stream tasks.
 
@@ -643,13 +799,17 @@ def main(casterSettingsDict: dict, dbSettings: DbSettings, processingSettings: M
         except Exception as error:
             sleep(3)
 
-    initializationLogger(casterSettingsDict, dbSettings, processingSettings) # Setup statistics
-    
+    initializationLogger(
+        casterSettingsDict, dbSettings, processingSettings
+    )  # Setup statistics
+
     # Download the source table from casters.
     try:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        casterStatus = loop.run_until_complete(downloadSourceTable(casterSettingsDict, dbSettings))
+        casterStatus = loop.run_until_complete(
+            downloadSourceTable(casterSettingsDict, dbSettings)
+        )
         sleep(3)
     except Exception as error:
         sleep(3)
@@ -658,13 +818,11 @@ def main(casterSettingsDict: dict, dbSettings: DbSettings, processingSettings: M
     # reduce caster dictionary to contain only active casters
     casterSettingsDict = reduceCasterDict(casterSettingsDict, casterStatus)
 
-
     if processingSettings.multiprocessingActive:
         RunMultiProcessing(casterSettingsDict, dbSettings, processingSettings)
     else:
         runSingleProcessing(casterSettingsDict, dbSettings)
         # Single-core version pulled due to bugs after introducing new class handling. Re-introduced soon.
-
 
 
 # This code is only executed if the script is run directly
@@ -684,13 +842,6 @@ if __name__ == "__main__":
         "--test",
         action="store_true",
         help="Test connection to Ntripcaster without committing data to database.",
-    )
-    parser.add_argument(
-        "-m",
-        "--mountpoint",
-        action="append",
-        help="Name of mountpoint without leading / (e.g. MPT1). "
-        + "Overrides mountpoint list in ingest.conf",
     )
     parser.add_argument(
         "-1",
@@ -717,7 +868,6 @@ if __name__ == "__main__":
     config = ConfigParser()
 
     # Initialize caster and database settings
-    casterSettings = CasterSettings()
     dbSettings = DbSettings()
     processingSettings = MultiprocessingSettings()
     # Set verbosity level
@@ -741,30 +891,29 @@ if __name__ == "__main__":
         logging.basicConfig(
             level=logLevel, format="%(asctime)s;%(levelname)s;%(message)s"
         )
-    
+
     load_dotenv()
     casterSettingsDict = loadCasterSettings()
     # casterSettingsDict contains the CasterSettings instances for all casters
-    dbSettings.host = os.getenv('DB_HOST')
-    dbSettings.port = int(os.getenv('DB_PORT'))
-    dbSettings.database = os.getenv('DB_NAME')
-    dbSettings.user = os.getenv('DB_USER')
-    dbSettings.password = os.getenv('DB_PASSWORD')
-    dbSettings.storeObservations = os.getenv('DB_STORE_OBSERVATIONS') == 'True'
+    dbSettings.host = os.getenv("DB_HOST")
+    dbSettings.port = int(os.getenv("DB_PORT"))
+    dbSettings.database = os.getenv("DB_NAME")
+    dbSettings.user = os.getenv("DB_USER")
+    dbSettings.password = os.getenv("DB_PASSWORD")
+    dbSettings.storeObservations = os.getenv("DB_STORE_OBSERVATIONS") == "True"
 
-    processingSettings.multiprocessingActive = os.getenv('MULTIPROCESSING_ACTIVE') == 'True'
-    processingSettings.maxReaders = int(os.getenv('MAX_READERS'))
-    processingSettings.readersPerDecoder = int(os.getenv('READERS_PER_DECODER'))
-    processingSettings.clearCheck = float(os.getenv('CLEAR_CHECK')) # Currently un-used. Will be used for clearing shared list.
-    processingSettings.appendCheck = float(os.getenv('APPEND_CHECK')) # Currently un-used. Will be used for appending shared list.
-    # Override mountpoints if specified in command line arguments
-    if args.mountpoint:
-        casterSettings.mountpoints = args.mountpoint
-    # Get mountpoints from caster if not specified in config or command line arguments
-    if casterSettings.mountpoints == []:
-        casterSettings.mountpoints = asyncio.run(getMountpoints(casterSettings))
-    # Log the mountpoints being used
-    logging.debug(f"Using mountpoints: {casterSettings.mountpoints}")
+    processingSettings.multiprocessingActive = (
+        os.getenv("MULTIPROCESSING_ACTIVE") == "True"
+    )
+    processingSettings.maxReaders = int(os.getenv("MAX_READERS"))
+    processingSettings.readersPerDecoder = int(os.getenv("READERS_PER_DECODER"))
+    processingSettings.clearCheck = float(
+        os.getenv("CLEAR_CHECK")
+    )  # Currently un-used. Will be used for clearing shared list.
+    processingSettings.appendCheck = float(
+        os.getenv("APPEND_CHECK")
+    )  # Currently un-used. Will be used for appending shared list.
+
     # If test mode is enabled, don't use database settings
     if args.test:
         dbSettings = None

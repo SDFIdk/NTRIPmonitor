@@ -56,7 +56,7 @@ In this section we briefly explain requirements for launching the monitor soluti
 ### Environment variables
 The monitor solution uses a locally saved environment file. The environment file is required for setting the processing settings and used to declare caster/database/grafana credentials. An example of an environment file can be found at [.env.example](.env.example). Copy the example and name it ".env". Modify the settings within this file according the use case. The .env file must be located in the same folder as the [Dockerfile](Dockerfile) and [docker-compose.prod.yaml](docker-compose.prod.yaml)/[docker-compose.dev.yaml](docker-compose.dev.yaml).
 ### System requirements and docker build information
-The monitor solution is built as a series of docker containers in order to be easily deployable on any system. For information regarding the current container setup, we refer to the [docker-compose.dev.yaml](Docker-compose-dev) for the test setup and [docker-compose.prod.yaml](Docker-compose-prod) for the production deployment. The current setup deploys 3 containers in the monitor network; Ingestion, Grafana, Timescaledb. The grafana and timescaledb containers are pulled from their respective docker registry, whereas the Ingestion container must be built using the Dockerfile for the [Dockerfile]. 
+The monitor solution is built as a series of docker containers in order to be easily deployable on any system. For information regarding the current container setup, we refer to the [docker-compose.dev.yaml](docker-compose-dev) for the test setup and [docker-compose.prod.yaml](docker-compose-prod) for the production deployment. The current setup deploys 3 containers in the monitor network; Ingestion, Grafana, Timescaledb. The grafana and timescaledb containers are pulled from their respective docker registry, whereas the Ingestion container must be built using the Dockerfile for the [Dockerfile]. 
 ### Python library requirements
 The current monitor solution requires three well-known packages to function.
 - **bitstring** is a python module that provides classes to create, manipulate and interpret binary data, allowing for easy handling of binary data structures, including reading and writing bits and bytes. For the monitor solution we specify version 3.1.9 of Bitstring in order for the [src/ntripclient.py](ntripclient) module to function properly. 
@@ -65,11 +65,70 @@ The current monitor solution requires three well-known packages to function.
 
 ### Configuring the .env
 
-Documentation coming soon.
+Configuration of the NTRIPmonitor is done by creating a configuration file called [.env] containing values for a set of environment variables, which are loaded by docker-compose.
+This repository contains an example [.env.example] that can be used as a template.
+Save the template as a new file [.env] and fill the required information:
+
+The first section of variables deal with local resources:
+| Variable | Description |
+|---|---|
+| NTRIP_DOCKER_REGISTRY | Location of NTRIPmonitor docker image. If building locally set to ntripmonitor:latest |
+| NTRIP_DATAMOUNT | Location of data to store. If set to Empty, there wil be no data persistence. Only used in production environment.:q |
+| DB_CPU | Integer number of CPU's available for the database. |
+| DB_MEMORY | Amount of memory availabe for the database. E.g. 32GB |
+| INGEST_CPU | Integer (FLOAT?) number of CPU's available for ingestion. E.g. 8 |
+| INGEST_MEMORY | Amount of memory availabe for the ingestion. E.g. 8GB |
+
+The second section of variables deal with the database setup. All can be left to their default values.
+| Variable | Description |
+|---|---|
+| DB_USER | Choose a username for the database. Default: postgres |
+| DB_PASSWORD | Choose a password for the database. |
+| DB_NAME | Default: UREGA |
+| DB_HOST | Default: timescaledb |
+| DB_PORT | Port for accessing the database. Default: 5432 |
+| DB_STORE_OBSERVATIONS | Storing observations extracted from MSM messages can lead to large amounts of data. Default: True |
+
+The third section of variables deal with Grafana
+| Variable | Description |
+|---|---|
+| GRAFANA_USER | Choose a username for Grafana. |
+| GRAFANA_PASSWORD | Choose a password for Grafana. |
+
+The fourth section of variables are the multiprocessing settings. These are described in the section on Multiprocessing below.
+
+The remaining sections configure one or more casters. Different casters can be separated by using different characters before the first underscore.
+| Variable | Description |
+|---|---|
+| FIRST_CASTER_ID | Name for caster to be used internally |
+| FIRST_CASTER_URL | URL and port of caster. E.g.: https://ntrip.dataforsyningen.dk:443 |
+| FIRST_CASTER_USER | Username to log on to caster |
+| FIRST_CASTER_PASSWORD | Password |
+| FIRST_CASTER_MOUNTPOINT | Comma-separated list of mountpoints to monitor. E.g. BUDD,MOJN |
+
+> [!WARNING]
+> Be careful not to save sensitive information in the template to avoid accidentally uploading this to Github.
 
 ### Building docker images and deploying a docker network
 
-Documentation coming soon.
+In a terminal, enter the directory of this code. To build the docker image, execute the following command:
+
+```
+docker buildx build -t ntripmonitor:latest .
+```
+This will build the docker image and store it locally under the name "ntripmonitor:latest".
+
+Make sure you have configured the file [.env] before deploying the network.
+To deploy the test environment.
+
+```
+docker-compose -f docker-compose.dev.yaml up -d
+```
+
+The flag `-d` starts the docker environment in the background.
+If you are ready to deploy the production environment replace `docker-compose.dev.yaml` with `docker-compose.prod.yaml`.
+
+Your NTRIPmonitor instance is now up and running.
 
 ### Setup Check List
 Checklist for launching the monitor solution. 
@@ -81,8 +140,8 @@ Checklist for launching the monitor solution.
 - Deploy the NTRIPmonitor network with docker-compose.
 
 # Ingestion
-The Ingestion of the monitor solution is responsible for all functionality regarding reading, decoding and general handling of the datastreams. 
-## Multi processing
+The ingestion of the monitor solution is responsible for all functionality regarding reading, decoding, and general handling of the datastreams. 
+## Multiprocessing
 To enable the multiprocessing version of the monitor solution, set the variable `MULTIPROCESSING_ACTIVE` to True in the environment file. This enables the use of multiple cores.
 The number of cores the system will use is set in the environment file.
 ### Overview of multiprocessing variables
@@ -103,7 +162,7 @@ Reading process in simple terms:
 - Reading process is spawned with a list of mountpoints
 - For each mountpoint in the list, an asynchronous operation is spawned.
 - - Each asynchronous operation connects to the mountpoint datastream
-- - Continously tries to connect to both the database and ntripcaster until both connections are established.
+- - Continuously tries to connect to both the database and ntripcaster until both connections are established.
 - - Grabs all messages sent by the mountpoint per second
 - - After the datastream has been idle for 0.05 seconds, grabs the CPU lock and appends message list to shared memory
 - - Repeat
@@ -114,14 +173,14 @@ Each decoder process is fed a CPU lock and a shared memory manager. Each reading
 
 Decoder process in simple terms : 
 - Decoder process is spawned with a CPU lock and a shared memory manager.
-- Decoder process continously checks the shred memory each 0.05 seconds for new data entries. 
+- Decoder process continuously checks the shred memory each 0.05 seconds for new data entries. 
 - If data is present in the shared memory, it grabs the CPU lock and clears the shared memory for data entries.
 - Each dataentry is run through the Decoder class, which checks the messagetype and assigns the correct decoder to the message type. 
 - Each dataentry is decoded and assigned a table string.
 - The data is packed in a JSON format and sent to the database through a stored procedure. The stored procedures to use is determined by the table string. 
 - Repeat
 
-## Single processing
+## Single-core processing
 
 Functionality under development.
 Documentation coming soon.
@@ -159,8 +218,8 @@ The loghandler currently creates a new database connection when an NTRIP disconn
 [Grafana](https://grafana.com/docs/grafana/latest/) is used to visualize real-time GNSS data by creating dynamic and interactive dashboards. For the monitor solution we use Grafana version 9.5.19. We use PostgreSQL queries within Grafana to fetch and display data from the database. By utilizing Grafana macros for PostgreSQL, we can efficiently query and visualize the GNSS data. For For more details on the panel types and macros available for PostgreSQL, we refer to the [Grafana Panel Documentation](https://grafana.com/docs/grafana/latest/panels-visualizations/visualizations/) and the [Grafana PostgreSQL documentation](https://grafana.com/docs/grafana/latest/datasources/postgres/).
 
 The grafana container loads the pre-configured dashboards found at [initgrafana/dashboards/](initgrafana/dashboards/) and stores both the [Inspector Gadget](initgrafana/dashboards/Inspector%20Gadget.json) and [RTCM overview](initgrafana/dashboards/RTCM%20monitor.json) dashboards. We highly recommend to use the interactive dashboard builder on the grafana webpage to create the dashboards, and update your dash boards in your local configuration. Each visualization can be built by using Grafanas interactive PostgreSQL query builder or by writing queries directly in plain SQL. 
->!NOTE
-> Saving your dashboard on the grafana webpage **does NOT** save it to the .yaml dashboard in your directory. You must copy the changed dashboard code by going into settings -> JSON code in the respective dashboard, and copy it over to your local file.
+> [!NOTE]
+> Saving your dashboard on the grafana webpage **does NOT** save it persistently. You must copy the changed dashboard code by going into settings -> JSON code in the respective dashboard, and copy it over to your local file.
 # Database
 The database utilizes the [timescaledb](https://docs.timescale.com/) extension to [PostgreSQL](https://www.postgresql.org/docs/). We use the latest postgreSQL 14 version.  
 ## Stored procedures

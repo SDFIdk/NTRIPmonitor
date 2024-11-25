@@ -472,6 +472,7 @@ async def procRtcmStream(
                 try:
                     # timeStampAtGain = time()
                     rtcmFrame, timeStamp = await ntripstream.getRtcmFrame()
+                    #CBH: BREAKING SINGLEPROCESSING WHEN MORE THAN ONE FRAME CONTAINED IN READ CHUNK
                     if (
                         rtcmFrame[24:-24].peek("uint:12") not in [1127, 1097, 1087, 1077]
                     ) and (rtcmFrame is not None):
