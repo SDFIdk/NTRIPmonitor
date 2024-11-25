@@ -687,6 +687,9 @@ class readerProcess(parallelProcess):
             )
         )
 
+    def __repr__(self):
+        return f"Reader with shared memory {hex(id(self.shared))} of mountpoints {self.mountpoints}"
+
 
 class decoderProcess(parallelProcess):
     def __init__(self, dbSettings: DbSettings, sharedEncoded, lock: Lock):
@@ -696,6 +699,9 @@ class decoderProcess(parallelProcess):
 
     def run(self):
         asyncio.run(decodeInsertConsumer(self.shared, self.database, self.lock))
+
+    def __repr__(self):
+        return f"Decoder with shared memory {hex(id(self.shared))}"
 
 
 def RunMultiProcessing(
@@ -743,17 +749,20 @@ def RunMultiProcessing(
 
         # here we introduce a watcher
         logging.info(
-            f"Stage to introduce watcher for {readingProcesses + decoderProcesses}"
+            f"Introducing watcher for {readingProcesses + decoderProcesses}"
         )
         while True:
-            # Wait 30 seconds between checking processes for aliveness
-            sleep(30)
+            # Wait 300 seconds between checking processes for aliveness
+            sleep(300)
 
             for proc in readingProcesses + decoderProcesses:
                 exitcode = proc.process.exitcode
+                logging.debug(
+                    f"Checking process {proc} {proc.process} which has exit_code {exitcode}."
+                )
                 if exitcode is not None:
                     logging.warning(
-                        f"Restarting process {proc}, with Process object {proc.process} with un-expected exit_code {exitcode}."
+                        f"Restarting process {proc} {proc.process} with un-expected exit_code {exitcode}."
                     )
                     proc.start()
 
