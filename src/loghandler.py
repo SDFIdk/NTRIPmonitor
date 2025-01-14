@@ -49,7 +49,7 @@ class NtripLogHandler:
         """
         Initiates a connection to the NTRIP caster and requests the specified mount point.
         Also initiates a single database connection for logging disconnects and reconnects.
-        Does not handle if the full process shuts down.
+        Does not handle if the full process shuts down. This is handled by RunMultiProcessing in ingestion.py.
 
         Args:
         ntripclient (NtripClients): An instance of NtripClients to request the NTRIP stream.
