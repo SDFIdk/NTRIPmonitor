@@ -871,7 +871,7 @@ if __name__ == "__main__":
     dbSettings = DbSettings()
     processingSettings = MultiprocessingSettings()
     # Set verbosity level
-    args.verbosity = 3
+    args.verbosity = 2
     # Set logging level based on verbosity
     logLevel = logging.ERROR
     if args.verbosity == 1:
