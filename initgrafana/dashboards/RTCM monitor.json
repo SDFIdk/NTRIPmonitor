@@ -123,7 +123,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT rtcm.mountpoint,\r\n  AVG(gps_sum) AS \"GPS\",\r\n  AVG(glo_sum) AS \"GLONASS\",\r\n  AVG(gal_sum) AS \"GALILEO\",\r\n  AVG(bds_sum) AS \"BEIDOU\"\r\nFROM (\r\n  SELECT\r\n    mountpoint,\r\n    $__timeGroup(receive_time, $__interval) as time,\r\n    SUM(CASE WHEN rtcm_msg_type BETWEEN 1071 AND 1077 THEN rtcm_sat_count END)/CAST($__interval_ms/1000 AS INT) AS gps_sum,\r\n    SUM(CASE WHEN rtcm_msg_type BETWEEN 1081 AND 1087 THEN rtcm_sat_count END)/CAST($__interval_ms/1000 AS INT) AS glo_sum,\r\n    SUM(CASE WHEN rtcm_msg_type BETWEEN 1091 AND 1097 THEN rtcm_sat_count END)/CAST($__interval_ms/1000 AS INT) AS gal_sum,\r\n    SUM(CASE WHEN rtcm_msg_type BETWEEN 1121 AND 1127 THEN rtcm_sat_count END)/CAST($__interval_ms/1000 AS INT) AS bds_sum\r\n  FROM rtcm_packages\r\n  WHERE\r\n    $__timeFilter(receive_time)\r\n  GROUP BY mountpoint, time\r\n) rtcm\r\nINNER JOIN sourcetable_constants source ON rtcm.mountpoint = source.mountpoint\r\nGROUP BY source.casterprovider, rtcm.mountpoint\r\nORDER BY source.casterprovider, rtcm.mountpoint\r\n",
+          "rawSql": "SELECT rtcm.mountpoint,\r\n  AVG(gps_sum) AS \"GPS\",\r\n  AVG(glo_sum) AS \"GLONASS\",\r\n  AVG(gal_sum) AS \"GALILEO\",\r\n  AVG(bds_sum) AS \"BEIDOU\"\r\nFROM (\r\n  SELECT\r\n    mountpoint,\r\n    $__timeGroup(receive_time, $__interval) as time,\r\n    SUM(CASE WHEN rtcm_msg_type BETWEEN 1071 AND 1077 THEN rtcm_sat_count END)/CAST($__interval_ms/1000 AS INT) AS gps_sum,\r\n    SUM(CASE WHEN rtcm_msg_type BETWEEN 1081 AND 1087 THEN rtcm_sat_count END)/CAST($__interval_ms/1000 AS INT) AS glo_sum,\r\n    SUM(CASE WHEN rtcm_msg_type BETWEEN 1091 AND 1097 THEN rtcm_sat_count END)/CAST($__interval_ms/1000 AS INT) AS gal_sum,\r\n    SUM(CASE WHEN rtcm_msg_type BETWEEN 1121 AND 1127 THEN rtcm_sat_count END)/CAST($__interval_ms/1000 AS INT) AS bds_sum\r\n  FROM rtcm_packages\r\n  WHERE\r\n    $__timeFilter(receive_time) AND mountpoint IN ($mountpoints)\r\n  GROUP BY mountpoint, time\r\n) rtcm\r\nINNER JOIN sourcetable_constants source ON rtcm.mountpoint = source.mountpoint\r\nGROUP BY source.casterprovider, rtcm.mountpoint\r\nORDER BY source.casterprovider, rtcm.mountpoint\r\n",
           "refId": "A",
           "sql": {
             "columns": [
@@ -245,7 +245,7 @@
           ],
           "metricColumn": "mountpoint",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroupAlias(receive_time,$__interval),\n  mountpoint AS metric,\n  SUM(rtcm_sat_count)/($__interval_ms/1000) AS \"rtcm_sat_count\"\nFROM rtcm_packages\nWHERE\n $__timeFilter(receive_time) AND (\n  rtcm_msg_type BETWEEN 1071 AND 1077 OR\n  rtcm_msg_type BETWEEN 1081 AND 1087 OR\n  rtcm_msg_type BETWEEN 1091 AND 1097 OR\n  rtcm_msg_type BETWEEN 1121 AND 1127)\nGROUP BY time,metric \nORDER BY time,metric ",
+          "rawSql": "SELECT\n  $__timeGroupAlias(receive_time,$__interval),\n  mountpoint AS metric,\n  SUM(rtcm_sat_count)/($__interval_ms/1000) AS \"rtcm_sat_count\"\nFROM rtcm_packages\nWHERE\n $__timeFilter(receive_time) AND (\n  rtcm_msg_type BETWEEN 1071 AND 1077 OR\n  rtcm_msg_type BETWEEN 1081 AND 1087 OR\n  rtcm_msg_type BETWEEN 1091 AND 1097 OR\n  rtcm_msg_type BETWEEN 1121 AND 1127)\n  AND mountpoint IN ($mountpoints)\nGROUP BY time,metric \nORDER BY time,metric ",
           "refId": "A",
           "select": [
             [
@@ -419,7 +419,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT coord.mountpoint, latitude, longitude\r\nFROM sourcetable_constants source\r\nINNER JOIN coordinates coord ON source.mountpoint = coord.mountpoint",
+          "rawSql": "SELECT rp.mountpoint, latitude, longitude\r\nFROM sourcetable_constants sc\r\nJOIN (SELECT DISTINCT mountpoint FROM rtcm_packages) rp ON rp.mountpoint = sc.mountpoint\r\nWHERE rp.mountpoint IN ($mountpoints)",
           "refId": "A",
           "sql": {
             "columns": [
@@ -526,7 +526,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT subquery.mountpoint as metric,\r\n  AVG(count_per_interval)/8/1024 AS \"kB/s average\"\r\nFROM (\r\n  SELECT\r\n    mountpoint,\r\n    $__timeGroup(receive_time, $__interval) as minute,\r\n    SUM(rtcm_msg_size)/CAST($__interval_ms/1000 AS FLOAT) AS count_per_interval\r\n  FROM rtcm_packages\r\n  WHERE\r\n    $__timeFilter(receive_time)\r\n  GROUP BY mountpoint, minute\r\n) subquery\r\nINNER JOIN sourcetable_constants source ON subquery.mountpoint = source.mountpoint\r\nGROUP BY source.casterprovider, subquery.mountpoint\r\nORDER BY source.casterprovider, subquery.mountpoint\r\n\r\n",
+          "rawSql": "SELECT subquery.mountpoint as metric,\r\n  AVG(count_per_interval)/8/1024 AS \"kB/s average\"\r\nFROM (\r\n  SELECT\r\n    mountpoint,\r\n    $__timeGroup(receive_time, $__interval) as minute,\r\n    SUM(rtcm_msg_size)/CAST($__interval_ms/1000 AS FLOAT) AS count_per_interval\r\n  FROM rtcm_packages\r\n  WHERE\r\n    $__timeFilter(receive_time) AND mountpoint IN ($mountpoints)\r\n  GROUP BY mountpoint, minute\r\n) subquery\r\nINNER JOIN sourcetable_constants source ON subquery.mountpoint = source.mountpoint\r\nGROUP BY source.casterprovider, subquery.mountpoint\r\nORDER BY source.casterprovider, subquery.mountpoint\r\n\r\n",
           "refId": "A",
           "sql": {
             "columns": [
@@ -642,7 +642,7 @@
           ],
           "metricColumn": "mountpoint",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroupAlias(receive_time,$__interval),\n  mountpoint AS metric,\n  SUM(rtcm_msg_size)/CAST($__interval_ms/1000 AS FLOAT)/8/1024 AS \"kB/s average over $__interval\"\nFROM rtcm_packages \nWHERE\n  $__timeFilter(receive_time)\nGROUP BY 1,2 \nORDER BY 1,2",
+          "rawSql": "SELECT\n  $__timeGroupAlias(receive_time,$__interval),\n  mountpoint AS metric,\n  SUM(rtcm_msg_size)/CAST($__interval_ms/1000 AS FLOAT)/8/1024 AS \"kB/s average over $__interval\"\nFROM rtcm_packages \nWHERE\n  $__timeFilter(receive_time) AND mountpoint IN ($mountpoints)\nGROUP BY 1,2 \nORDER BY 1,2",
           "refId": "A",
           "select": [
             [
@@ -762,7 +762,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\r\n  mountpoint as \"Mountpoint\",\r\n  disconnect_time as \"Disconnected at\",\r\n  reconnect_time as \"Reconnected at\",\r\n  to_char(coalesce(reconnect_time, CURRENT_TIMESTAMP)-disconnect_time, 'HH24:MI:SS') as \"Duration\"\r\nFROM connection_logger\r\nWHERE\r\n  $__timeFilter(disconnect_time) OR\r\n  $__timeFilter(reconnect_time) OR\r\n  reconnect_time IS NULL\r\nORDER BY disconnect_time DESC",
+          "rawSql": "SELECT\r\n  mountpoint as \"Mountpoint\",\r\n  disconnect_time as \"Disconnected at\",\r\n  reconnect_time as \"Reconnected at\",\r\n  to_char(coalesce(reconnect_time, CURRENT_TIMESTAMP)-disconnect_time, 'HH24:MI:SS') as \"Duration\"\r\nFROM connection_logger\r\nWHERE\r\n  mountpoint IN ($mountpoints) AND (\r\n    $__timeFilter(disconnect_time) OR\r\n    $__timeFilter(reconnect_time) OR\r\n    reconnect_time IS NULL)\r\nORDER BY disconnect_time DESC",
           "refId": "A",
           "sql": {
             "columns": [
@@ -847,7 +847,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT coord.mountpoint as \"Mountpoint\", source.casterprovider as \"Caster\", coord.ecef_x as \"X\", coord.ecef_y as \"Y\", coord.ecef_z as \"Z\", coord.anthgt as \"Antenna height\"\r\nFROM coordinates coord\r\nINNER JOIN rtcm_packages rtcm ON coord.rtcm_package_id = rtcm.rtcm_package_id\r\nINNER JOIN sourcetable_constants source ON coord.mountpoint = source.mountpoint\r\nORDER BY source.casterprovider, coord.mountpoint",
+          "rawSql": "SELECT coord.mountpoint as \"Mountpoint\", source.casterprovider as \"Caster\", coord.ecef_x as \"X\", coord.ecef_y as \"Y\", coord.ecef_z as \"Z\", coord.anthgt as \"Antenna height\"\r\nFROM coordinates coord\r\nINNER JOIN rtcm_packages rtcm ON coord.rtcm_package_id = rtcm.rtcm_package_id\r\nINNER JOIN sourcetable_constants source ON coord.mountpoint = source.mountpoint\r\nWHERE coord.mountpoint IN ($mountpoints)\r\nORDER BY source.casterprovider, coord.mountpoint",
           "refId": "A",
           "sql": {
             "columns": [
@@ -946,7 +946,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\r\n  $__timeGroupAlias(receive_time,$__interval),\r\n  mountpoint AS metric,\r\n  COUNT(rtcm_obs_epoch) AS \"epoch_obs\"\r\nFROM rtcm_packages\r\nWHERE\r\n  $__timeFilter(receive_time) AND (\r\n  rtcm_msg_type BETWEEN 1071 AND 1077 OR\r\n  rtcm_msg_type BETWEEN 1081 AND 1087 OR\r\n  rtcm_msg_type BETWEEN 1091 AND 1097 OR\r\n  rtcm_msg_type BETWEEN 1121 AND 1127) AND\r\n  rtcm_obs_epoch IS NOT NULL and\r\n  rtcm_sat_count != 0\r\nGROUP BY 1,2\r\nORDER BY 1,2",
+          "rawSql": "SELECT\r\n  $__timeGroupAlias(receive_time,$__interval),\r\n  mountpoint AS metric,\r\n  COUNT(rtcm_obs_epoch) AS \"epoch_obs\"\r\nFROM rtcm_packages\r\nWHERE\r\n  mountpoint IN ($mountpoints) AND\r\n  $__timeFilter(receive_time) AND (\r\n  rtcm_msg_type BETWEEN 1071 AND 1077 OR\r\n  rtcm_msg_type BETWEEN 1081 AND 1087 OR\r\n  rtcm_msg_type BETWEEN 1091 AND 1097 OR\r\n  rtcm_msg_type BETWEEN 1121 AND 1127) AND\r\n  rtcm_obs_epoch IS NOT NULL and\r\n  rtcm_sat_count != 0\r\nGROUP BY 1,2\r\nORDER BY 1,2",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1069,7 +1069,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\r\n  $__timeGroup(receive_time, $__interval) AS time,\r\n  mountpoint AS metric,\r\n  AVG(MOD((EXTRACT(epoch FROM receive_time) + \r\n    CASE \r\n      WHEN rtcm_msg_type BETWEEN 1071 AND 1077 THEN $GPSleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1081 AND 1087 THEN $GLOleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1091 AND 1097 THEN $GALleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1121 AND 1127 THEN $BEIleapseconds\r\n    END)::NUMERIC(15,3),86400) - MOD((EXTRACT(epoch FROM rtcm_obs_epoch)),86400)) as value\r\nFROM rtcm_packages\r\nWHERE\r\n  $__timeFilter(receive_time) AND\r\n  rtcm_obs_epoch IS NOT NULL AND\r\n  rtcm_sat_count != 0 AND (\r\n  rtcm_msg_type BETWEEN 1071 AND 1077 OR\r\n  rtcm_msg_type BETWEEN 1081 AND 1087 OR\r\n  rtcm_msg_type BETWEEN 1091 AND 1097 OR\r\n  rtcm_msg_type BETWEEN 1121 AND 1127)\r\nGROUP BY 1,2\r\nORDER BY 1,2",
+          "rawSql": "SELECT\r\n  $__timeGroup(receive_time, $__interval) AS time,\r\n  mountpoint AS metric,\r\n  AVG(MOD((EXTRACT(epoch FROM receive_time) + \r\n    CASE \r\n      WHEN rtcm_msg_type BETWEEN 1071 AND 1077 THEN $GPSleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1081 AND 1087 THEN $GLOleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1091 AND 1097 THEN $GALleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1121 AND 1127 THEN $BEIleapseconds\r\n    END)::NUMERIC(15,3),86400) - MOD((EXTRACT(epoch FROM rtcm_obs_epoch)),86400)) as value\r\nFROM rtcm_packages\r\nWHERE\r\n  mountpoint IN ($mountpoints) AND\r\n  $__timeFilter(receive_time) AND\r\n  rtcm_obs_epoch IS NOT NULL AND\r\n  rtcm_sat_count != 0 AND (\r\n  rtcm_msg_type BETWEEN 1071 AND 1077 OR\r\n  rtcm_msg_type BETWEEN 1081 AND 1087 OR\r\n  rtcm_msg_type BETWEEN 1091 AND 1097 OR\r\n  rtcm_msg_type BETWEEN 1121 AND 1127)\r\nGROUP BY 1,2\r\nORDER BY 1,2",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1153,7 +1153,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\r\n  MAX(receive_time) AS time,\r\n  mountpoint AS metric,\r\n  MAX(MOD((EXTRACT(epoch FROM receive_time) + \r\n    CASE \r\n      WHEN rtcm_msg_type BETWEEN 1071 AND 1077 THEN $GPSleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1081 AND 1087 THEN $GLOleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1091 AND 1097 THEN $GALleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1121 AND 1127 THEN $BEIleapseconds\r\n    END)::NUMERIC(15,3),86400) - MOD((EXTRACT(epoch FROM rtcm_obs_epoch)),86400)) as max_latency\r\nFROM rtcm_packages\r\nWHERE\r\n  $__timeFilter(receive_time) AND\r\n  rtcm_obs_epoch IS NOT NULL AND\r\n  rtcm_sat_count != 0 AND (\r\n  rtcm_msg_type BETWEEN 1071 AND 1077 OR\r\n  rtcm_msg_type BETWEEN 1081 AND 1087 OR\r\n  rtcm_msg_type BETWEEN 1091 AND 1097 OR\r\n  rtcm_msg_type BETWEEN 1121 AND 1127)\r\nGROUP BY metric\r\nORDER BY time ASC",
+          "rawSql": "SELECT\r\n  MAX(receive_time) AS time,\r\n  mountpoint AS metric,\r\n  MAX(MOD((EXTRACT(epoch FROM receive_time) + \r\n    CASE \r\n      WHEN rtcm_msg_type BETWEEN 1071 AND 1077 THEN $GPSleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1081 AND 1087 THEN $GLOleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1091 AND 1097 THEN $GALleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1121 AND 1127 THEN $BEIleapseconds\r\n    END)::NUMERIC(15,3),86400) - MOD((EXTRACT(epoch FROM rtcm_obs_epoch)),86400)) as max_latency\r\nFROM rtcm_packages\r\nWHERE\r\n  mountpoint IN ($mountpoints) AND\r\n  $__timeFilter(receive_time) AND\r\n  rtcm_obs_epoch IS NOT NULL AND\r\n  rtcm_sat_count != 0 AND (\r\n  rtcm_msg_type BETWEEN 1071 AND 1077 OR\r\n  rtcm_msg_type BETWEEN 1081 AND 1087 OR\r\n  rtcm_msg_type BETWEEN 1091 AND 1097 OR\r\n  rtcm_msg_type BETWEEN 1121 AND 1127)\r\nGROUP BY metric\r\nORDER BY time ASC",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1237,7 +1237,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT\r\n  MAX(receive_time) AS time,\r\n  mountpoint AS metric,\r\n  MIN(MOD((EXTRACT(epoch FROM receive_time) + \r\n    CASE \r\n      WHEN rtcm_msg_type BETWEEN 1071 AND 1077 THEN $GPSleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1081 AND 1087 THEN $GLOleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1091 AND 1097 THEN $GALleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1121 AND 1127 THEN $BEIleapseconds\r\n    END)::NUMERIC(15,3),86400) - MOD((EXTRACT(epoch FROM rtcm_obs_epoch)),86400)) as max_latency\r\nFROM rtcm_packages\r\nWHERE\r\n  $__timeFilter(receive_time) AND\r\n  rtcm_obs_epoch IS NOT NULL AND\r\n  rtcm_sat_count != 0 AND (\r\n  rtcm_msg_type BETWEEN 1071 AND 1077 OR\r\n  rtcm_msg_type BETWEEN 1081 AND 1087 OR\r\n  rtcm_msg_type BETWEEN 1091 AND 1097 OR\r\n  rtcm_msg_type BETWEEN 1121 AND 1127)\r\nGROUP BY metric\r\nORDER BY time ASC",
+          "rawSql": "SELECT\r\n  MAX(receive_time) AS time,\r\n  mountpoint AS metric,\r\n  MIN(MOD((EXTRACT(epoch FROM receive_time) + \r\n    CASE \r\n      WHEN rtcm_msg_type BETWEEN 1071 AND 1077 THEN $GPSleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1081 AND 1087 THEN $GLOleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1091 AND 1097 THEN $GALleapseconds\r\n      WHEN rtcm_msg_type BETWEEN 1121 AND 1127 THEN $BEIleapseconds\r\n    END)::NUMERIC(15,3),86400) - MOD((EXTRACT(epoch FROM rtcm_obs_epoch)),86400)) as max_latency\r\nFROM rtcm_packages\r\nWHERE\r\n  mountpoint IN ($mountpoints) AND\r\n  $__timeFilter(receive_time) AND\r\n  rtcm_obs_epoch IS NOT NULL AND\r\n  rtcm_sat_count != 0 AND (\r\n  rtcm_msg_type BETWEEN 1071 AND 1077 OR\r\n  rtcm_msg_type BETWEEN 1081 AND 1087 OR\r\n  rtcm_msg_type BETWEEN 1091 AND 1097 OR\r\n  rtcm_msg_type BETWEEN 1121 AND 1127)\r\nGROUP BY metric\r\nORDER BY time ASC",
           "refId": "A",
           "sql": {
             "columns": [
@@ -1307,6 +1307,81 @@
         "query": "4",
         "skipUrlSync": false,
         "type": "constant"
+      },
+      {
+        "allValue": "",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "definition": "SELECT DISTINCT countrycode\nFROM sourcetable_constants",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Countries",
+        "multi": true,
+        "name": "countries",
+        "options": [],
+        "query": "SELECT DISTINCT countrycode\nFROM sourcetable_constants",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 5,
+        "type": "query"
+      },
+      {
+        "allValue": "",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "definition": "SELECT DISTINCT casterprovider FROM sourcetable_constants",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Casters",
+        "multi": true,
+        "name": "casters",
+        "options": [],
+        "query": "SELECT DISTINCT casterprovider FROM sourcetable_constants",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 5,
+        "type": "query"
+      },
+      {
+        "allValue": "",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "definition": "SELECT sc.mountpoint\nFROM sourcetable_constants sc\nWHERE mountpoint IN (SELECT DISTINCT mountpoint FROM rtcm_packages)\nAND sc.casterprovider in ($casters)\nAND sc.countrycode in ($countries)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Mountpoints",
+        "multi": true,
+        "name": "mountpoints",
+        "options": [],
+        "query": "SELECT sc.mountpoint\nFROM sourcetable_constants sc\nWHERE mountpoint IN (SELECT DISTINCT mountpoint FROM rtcm_packages)\nAND sc.casterprovider in ($casters)\nAND sc.countrycode in ($countries)",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
       }
     ]
   },
