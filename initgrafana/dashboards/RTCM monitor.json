@@ -1293,14 +1293,6 @@
         "type": "constant"
       },
       {
-        "description": "Leap seconds between the QZZS system and UTC",
-        "hide": 2,
-        "name": "QZZSleapseconds",
-        "query": "18",
-        "skipUrlSync": false,
-        "type": "constant"
-      },
-      {
         "description": "Leap seconds between the Bei system and UTC",
         "hide": 2,
         "name": "BEIleapseconds",
