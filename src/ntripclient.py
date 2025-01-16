@@ -15,6 +15,7 @@ from __version__ import __version__
 
 STREAM_READING_TIMEOUT = 5.0
 
+
 class NtripClients:
     RTCM3FRAMEPREAMPLE = Bits(bin="0b11010011")
     RTCM3FRAMEHEADERFORMAT = "bin:8, pad:6, uint:10"
@@ -495,7 +496,6 @@ class NtripClients:
                 except (
                     asyncio.IncompleteReadError,
                     asyncio.LimitOverrunError,
-                    TimeoutError,
                 ) as error:
                     logging.error(
                         f"Connection to {self.casterUrl} failed with: {error}"
@@ -505,13 +505,19 @@ class NtripClients:
                         f"Connection to {self.casterUrl} failed with: {error}"
                         "during data reception."
                     ) from None
+                except TimeoutError as error:
+                    logging.error(
+                        f"Connection to {self.casterUrl} timed out during data reception: {error}."
+                    )
+                    raise ConnectionError(
+                        f"Connection to {self.casterUrl} timed out during data reception: {error}."
+                    ) from None
 
                 if rawLine[-2:] != b"\r\n":
                     logging.error(
-                        f"{self.ntripMountPoint}:Chunk malformed. "
-                        "Expected \r\n as ending. Closing connection!"
+                        f"{self.ntripMountPoint}:Chunk malformed. Expected \r\n as ending. Closing connection!"
                     )
-                    raise IOError("Chunk malformed ")
+                    raise IOError("Chunk malformed.")
                 receivedBits = BitStream(rawLine[:-2])
                 logging.debug(
                     f"{self.ntripMountPoint}: Chunk {receivedBits.length}:{length * 8}."
