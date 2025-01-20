@@ -71,7 +71,7 @@ class NtripObservationHandler(DatabaseHandler):
         super().__init__(dbSettings)
 
     async def grabStoredProcedure(inputString: str):
-        return DatabaseHandler.INPUTTABLE.get(inputString, None)
+        return NtripObservationHandler.INPUTTABLE.get(inputString, None)
 
     async def dbInsertObsInfoStoredBatch(
         self, decodedObs: list, rtcmPackageIds: list, tableList: list
@@ -90,7 +90,7 @@ class NtripObservationHandler(DatabaseHandler):
                 decodedObsFrameJson = json.dumps(decodedObsFrame)
                 connection = await self.getConnection()
                 try:
-                    stored_procedure = await DatabaseHandler.grabStoredProcedure(
+                    stored_procedure = await NtripObservationHandler.grabStoredProcedure(
                         tableList[index]
                     )
                     if stored_procedure is None:
