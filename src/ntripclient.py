@@ -516,7 +516,7 @@ class NtripClients:
 
                 if rawLine[-2:] != b"\r\n":
                     logging.error(
-                        f"{self.ntripMountPoint}:Chunk malformed. Expected \r\n as ending. Closing connection!"
+                        f"{self.ntripMountPoint}: Chunk malformed. Expected \r\n as ending. Closing connection!"
                     )
                     raise IOError("Chunk malformed.")
                 receivedBits = BitStream(rawLine[:-2])

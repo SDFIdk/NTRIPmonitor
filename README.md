@@ -191,7 +191,9 @@ Documentation coming soon.
 Documentation coming soon.
 
 ## Disconnect/Reconnect log handling
-Disconnects and reconnects of individual mountpoints are currently handled in the [src/loghandler.py](loghandler) class. Mountpoint disconnects are logged and timestamps are inserted into the database table [initdb/30-connection_logger.sql](initdb/30-connection_logger.sql). The dataentry is updated with a reconnect timestamp when the monitor solution reconnects to the mountpoint. The function does not log issues upon initialization, and a mountpoint must be connected initially before it begins logging disconnects. 
+Disconnects and reconnects of individual mountpoints are currently handled in the [src/databasehandling.py](NtripLogHandler) class.
+Mountpoint disconnects are logged and timestamps are inserted into the database table [initdb/30-connection_logger.sql](initdb/30-connection_logger.sql).
+The dataentry is updated with a timestamp when a new connection to the mountpoint has been established.
 
 ## NTRIP, RTCM3 and Decoding
 ### NtripClient Module
@@ -214,7 +216,6 @@ The `Decoder` class in [src/decoderclasses.py](src/decoderclasses.py) is where t
 - All MSM message types. (1071-1137)
 [insert flowchart, ppx slide #4]
 
-The loghandler currently creates a new database connection when an NTRIP disconnect occurs. It should be fed a connection from the connection pool instead to minimize overhead. The overhead accompanied by this oversigt is to some extent negligent, as it is only introduced when a disconnect occurs, thus rarely.
 # Grafana
 [Grafana](https://grafana.com/docs/grafana/latest/) is used to visualize real-time GNSS data by creating dynamic and interactive dashboards. For the monitor solution we use Grafana version 9.5.19. We use PostgreSQL queries within Grafana to fetch and display data from the database. By utilizing Grafana macros for PostgreSQL, we can efficiently query and visualize the GNSS data. For For more details on the panel types and macros available for PostgreSQL, we refer to the [Grafana Panel Documentation](https://grafana.com/docs/grafana/latest/panels-visualizations/visualizations/) and the [Grafana PostgreSQL documentation](https://grafana.com/docs/grafana/latest/datasources/postgres/).
 
