@@ -716,7 +716,7 @@
             "inspect": false
           },
           "mappings": [],
-          "noValue": "No mountpoints disconnected in chosen time interval",
+          "noValue": "No entry",
           "thresholds": {
             "mode": "absolute",
             "steps": [
