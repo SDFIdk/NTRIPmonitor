@@ -13,7 +13,7 @@ from bitstring import Bits, BitStream
 from crc import crc24q
 from __version__ import __version__
 
-STREAM_READING_TIMEOUT = 5.0
+TIMEOUT_READ_STREAM = 10.0
 
 
 class NtripClients:
@@ -483,12 +483,13 @@ class NtripClients:
                 try:
                     logging.debug(f"{self.ntripMountPoint}: Awaiting next break...")
                     rawLine = await asyncio.wait_for(
-                        self.ntripReader.readuntil(b"\r\n"), STREAM_READING_TIMEOUT
+                        self.ntripReader.readuntil(b"\r\n"), TIMEOUT_READ_STREAM
                     )
                     length = int(rawLine[:-2].decode("ISO-8859-1"), 16)
                     logging.debug(f"{self.ntripMountPoint}: Awaiting a chunk...")
                     rawLine = await asyncio.wait_for(
-                        self.ntripReader.readexactly(length + 2), STREAM_READING_TIMEOUT
+                        self.ntripReader.readexactly(length + 2),
+                        TIMEOUT_READ_STREAM,
                     )
                     if timeStampFlag == 0:
                         timeStamp = time()
