@@ -27,15 +27,6 @@
   - [Database connections](#database-connections)
 - [Grafana](#grafana)
 
-- [Development and To-Do's](#development-and-to-dos)
-  - [Known Issues](#known-issues)
-    - [.env loading](#env-loading)
-  - [Development](#developtment)
-    - [Daily and Hourly statistic files](#daily--hourly-statistic-files)
-    - [NMEA pings for VRS test](#nmea-pings-for-vrs-test)
-    - [Direct IP connection to mountpoints](#direct-ip-connection-to-mountpoints)
-    - [RTCM reading procedure](#change-rtcm-reading-procedure-to-be-continous-instead-of-on-a-per-frame-basis)
-    - [Mountpoint splitter](#optimize-mountpointsplitter)
 # Quick-start
 ## Short overview of the solution
 The NTRIPmonitor is a monitoring application designed to ingest Real-Time Kinematic (RTK) correction data in the RTCM format from an NTRIP caster, store and contain the data in the UREGA postgresql database and visualize it using the grafana web application.
