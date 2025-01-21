@@ -29,12 +29,11 @@ from sys import exit
 from time import time, sleep
 from dotenv import load_dotenv
 
-from databasehandling import DatabaseHandler
+from databasehandling import NtripObservationHandler, NtripLogHandler
 import asyncpg
 from ntripclient import NtripClients
 from settings import CasterSettings, DbSettings, MultiprocessingSettings
 import decoderclasses
-from loghandler import NtripLogHandler
 from rtcm3 import Rtcm3
 
 
@@ -100,7 +99,7 @@ async def decodeInsertConsumer(
         if dbSettings:
             while True:
                 try:
-                    dBHandler = DatabaseHandler(dbSettings)
+                    dBHandler = NtripObservationHandler(dbSettings)
                     await dBHandler.initializePool()
                     break
                 except Exception as error:
@@ -143,7 +142,7 @@ async def decodeInsertConsumer(
                                 encodedFrames, dbSettings.storeObservations, rtcmMessage
                             )
                             await dBHandler.dbInsertBatch(
-                                dbSettings, decodedFrames, decodedObs, tableList
+                                decodedFrames, decodedObs, tableList
                             )
                         except Exception as error:
                             logging.error(
@@ -243,7 +242,7 @@ def mountpointSplitter(casterSettingsDict: dict, maxProcesses: int) -> list:
 
         chunks = [process.chunks for process in processes]
     except Exception as e:
-        logging.error(f"Failed to split mountpoints with Error: {e}")
+        logging.error(f"Failed to split mountpoints with error: {e}")
         chunks = []
 
     return chunks
@@ -290,9 +289,10 @@ async def procRtcmStream(
     retry: int = 3,
 ) -> None:
     ntripclient = NtripClients()
-    ntripLogger = NtripLogHandler()
+    ntripLogger = NtripLogHandler(dbSettings, mountPoint)
+    await ntripLogger.initializePool()
     ntripclient = await ntripLogger.requestStream(
-        ntripclient, casterSettings, dbSettings, mountPoint, log_disconnect=False
+        ntripclient, casterSettings, log_disconnect=False
     )
     encodedFrames = []
 
@@ -300,24 +300,27 @@ async def procRtcmStream(
         periodicFrameAppender(encodedFrames, sharedEncoded, lock, mountPoint)
     )
 
-    while True:
-        try:
-            frames_in_buffer, timeStamp = await ntripclient.getRtcmFrame()
-            for rtcmFrame in frames_in_buffer:
-                encodedFrames.append(
-                    {
-                        "frame": rtcmFrame,
-                        "timeStampInFrame": timeStamp,
-                        "messageSize": len(rtcmFrame),
-                        "mountPoint": mountPoint,
-                    }
+    try:
+        while True:
+            try:
+                frames_in_buffer, timeStamp = await ntripclient.getRtcmFrame()
+                for rtcmFrame in frames_in_buffer:
+                    encodedFrames.append(
+                        {
+                            "frame": rtcmFrame,
+                            "timeStampInFrame": timeStamp,
+                            "messageSize": len(rtcmFrame),
+                            "mountPoint": mountPoint,
+                        }
+                    )
+                if fail > 0:
+                    fail = 0
+            except (ConnectionError, IOError, IndexError):
+                ntripclient = await ntripLogger.requestStream(
+                    ntripclient, casterSettings, log_disconnect=True
                 )
-            if fail > 0:
-                fail = 0
-        except (ConnectionError, IOError, IndexError):
-            ntripclient = await ntripLogger.requestStream(
-                ntripclient, casterSettings, dbSettings, mountPoint, log_disconnect=True
-            )
+    except:
+        await ntripLogger.closePool()
 
 
 async def rtcmStreamTasks(
@@ -748,9 +751,7 @@ def RunMultiProcessing(
             decodingProcess.start()
 
         # here we introduce a watcher
-        logging.info(
-            f"Introducing watcher for {readingProcesses + decoderProcesses}"
-        )
+        logging.info(f"Introducing watcher for {readingProcesses + decoderProcesses}")
         while True:
             # Wait 300 seconds between checking processes for aliveness
             sleep(300)

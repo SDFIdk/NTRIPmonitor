@@ -156,8 +156,8 @@ The number of cores the system will use is set in the environment file.
 For the multiprocessing function tree, we advise the reader to follow the function calls of the function `RunRTCMStreamTasks` in [src/ingestion.py](src/ingestion.py).
 The maximum number of reading processes spawned is controlled by the **MAX_READERS** multiprocessing environment variable, but the true resulting reading processes also depends on the amount of configured mountpoints. The mountpoints are split into equal sized chunks, as to strain each reader process equally. If the amount of mountpoints are less than the maximum allowed reader processes, a reader process will be dedicated to each mountpoint and the remainder reading processes will be killed.
 #### Process of the individual reading process
-Each reading process is fed a mountpoint chunk. As each reading process is spawned, a `databaseHandler` class with a connection pool to the database is created. Each reading process creates an asynchronous operation for each mountpoint in the mountpoint chunk. A watchdog process watching over the asynchronous operations are spawned in order to reboot any shut down asynchronous operations during run time. In each operation, instances of the classes `Ntripclient` and `RTCM3` class is created. In each asynchronous operation we listen and log all messages sent by the mountpoint, and append to the shared memory. A continuous check is run for each mountpoint on their respective datastream every 0.05 seconds. If the datastream has gone silent, e.g. no incoming messages for 0.05 seconds, the process acquires the CPU lock and appends the messages to the shared memory, for processing by the assigned decoder process.
-Each decoder process handles disconnects and reconnects to either the database or ntripcaster.
+Each reading process is fed a mountpoint chunk. As each reading process is spawned, a `databaseHandler` class with a connection pool to the database is created. Each reading process creates an asynchronous operation for each mountpoint in the mountpoint chunk. A watchdog process watching over the asynchronous operations is spawned in order to reboot any shut down asynchronous operations during run time. In each operation, instances of the classes `Ntripclient` and `RTCM3` class is created. In each asynchronous operation we listen and log all messages sent by the mountpoint, and append to the shared memory. A continuous check is run for each mountpoint on their respective datastream every 0.05 seconds. If the datastream has gone silent, e.g. no incoming messages for 0.05 seconds, the process acquires the CPU lock and appends the messages to the shared memory, for processing by the assigned decoder process.
+Each decoder process handles disconnects and reconnects to either the database or the ntripcaster.
 Reading process in simple terms:
 - Reading process is spawned with a list of mountpoints
 - For each mountpoint in the list, an asynchronous operation is spawned.
@@ -166,16 +166,17 @@ Reading process in simple terms:
 - - Grabs all messages sent by the mountpoint per second
 - - After the datastream has been idle for 0.05 seconds, grabs the CPU lock and appends message list to shared memory
 - - Repeat
+
 ### Multiprocessing - Decoder processes
 The maximum number of decoder processes depend upon the number of reading processes spawned and the `READERS_PER_DECODER` multiprocessing environment variable. For each decoder process a CPU lock and a shared memory manager are spawned, which are fed to the reading processes related to that decoder process.
 #### Process of the individual decoder process
 Each decoder process is fed a CPU lock and a shared memory manager. Each reading process is spawned with a `databaseHandler` class and a `Decoder` class to handle the incoming RTCM messages.
 
-Decoder process in simple terms : 
-- Decoder process is spawned with a CPU lock and a shared memory manager.
-- Decoder process continuously checks the shred memory each 0.05 seconds for new data entries. 
+The decoder process in simple terms: 
+- The decoder process is spawned with a CPU lock and a shared memory manager.
+- The decoder process continuously checks the shared memory each 0.05 seconds for new data entries. 
 - If data is present in the shared memory, it grabs the CPU lock and clears the shared memory for data entries.
-- Each dataentry is run through the Decoder class, which checks the messagetype and assigns the correct decoder to the message type. 
+- Each dataentry is run through the `Decoder` class, which checks the message type and assigns the correct decoder to the message type. 
 - Each dataentry is decoded and assigned a table string.
 - The data is packed in a JSON format and sent to the database through a stored procedure. The stored procedures to use is determined by the table string. 
 - Repeat
@@ -190,7 +191,9 @@ Documentation coming soon.
 Documentation coming soon.
 
 ## Disconnect/Reconnect log handling
-Disconnects and reconnects of individual mountpoints are currently handled in the [src/loghandler.py](loghandler) class. Mountpoint disconnects are logged and timestamps are inserted into the database table [initdb/30-connection_logger.sql](initdb/30-connection_logger.sql). The dataentry is updated with a reconnect timestamp when the monitor solution reconnects to the mountpoint. The function does not log issues upon initialization, and a mountpoint must be connected initially before it begins logging disconnects. 
+Disconnects and reconnects of individual mountpoints are currently handled in the [src/databasehandling.py](NtripLogHandler) class.
+Mountpoint disconnects are logged and timestamps are inserted into the database table [initdb/30-connection_logger.sql](initdb/30-connection_logger.sql).
+The dataentry is updated with a timestamp when a new connection to the mountpoint has been established.
 
 ## NTRIP, RTCM3 and Decoding
 ### NtripClient Module
@@ -213,7 +216,6 @@ The `Decoder` class in [src/decoderclasses.py](src/decoderclasses.py) is where t
 - All MSM message types. (1071-1137)
 [insert flowchart, ppx slide #4]
 
-The loghandler currently creates a new database connection when an NTRIP disconnect occurs. It should be fed a connection from the connection pool instead to minimize overhead. The overhead accompanied by this oversigt is to some extent negligent, as it is only introduced when a disconnect occurs, thus rarely.
 # Grafana
 [Grafana](https://grafana.com/docs/grafana/latest/) is used to visualize real-time GNSS data by creating dynamic and interactive dashboards. For the monitor solution we use Grafana version 9.5.19. We use PostgreSQL queries within Grafana to fetch and display data from the database. By utilizing Grafana macros for PostgreSQL, we can efficiently query and visualize the GNSS data. For For more details on the panel types and macros available for PostgreSQL, we refer to the [Grafana Panel Documentation](https://grafana.com/docs/grafana/latest/panels-visualizations/visualizations/) and the [Grafana PostgreSQL documentation](https://grafana.com/docs/grafana/latest/datasources/postgres/).
 
