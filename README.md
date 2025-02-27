@@ -9,7 +9,7 @@
     - [Building docker images and deploying a docker network](#building-docker-images-and-deploying-a-docker-network)
     - [New User Check List](#new-user-check-list)
 - [Ingestion](#ingestion)
-  - [Multi processing](#multi-processing)
+  - [Multiprocessing](#multi-processing)
     - [Overview of multiprocessing environment variables](#overview-of-multiprocessing-variables)
     - [Multiprocessing - Reading processes](#multiprocessing---reading-processes)
       - [Process of the individual reading process](#process-of-the-individual-reading-process)
@@ -28,6 +28,7 @@
 - [Grafana](#grafana)
 
 # Quick-start
+
 ## Short overview of the solution
 The NTRIPmonitor is a monitoring application designed to ingest Real-Time Kinematic (RTK) correction data in the RTCM format from an NTRIP caster, store and contain the data in the UREGA postgresql database and visualize it using the grafana web application.
 
@@ -214,7 +215,7 @@ The grafana container loads the pre-configured dashboards found at [initgrafana/
 > [!NOTE]
 > Saving your dashboard on the grafana webpage **does NOT** save it persistently. You must copy the changed dashboard code by going into settings -> JSON code in the respective dashboard, and copy it over to your local file.
 # Database
-The database utilizes the [timescaledb](https://docs.timescale.com/) extension to [PostgreSQL](https://www.postgresql.org/docs/). We use the latest postgreSQL 14 version.  
+The database uses the [timescaledb](https://docs.timescale.com/) extension to [PostgreSQL](https://www.postgresql.org/docs/). We use the latest postgreSQL 14 version.
 ## Stored procedures
 Database interactions between the ingestion and timescaledb containers are executed using stored procedures. During ingestion the data is packed in JSON format and sent to a stored procedure in the database.
 The stored procedure handles the sorting and type setting of the packed data in the database.

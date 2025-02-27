@@ -266,7 +266,7 @@ async def periodicFrameAppender(
         await asyncio.sleep(
             checkInterval
         )  # Wait for a short period to avoid hogging the CPU
-        if encodedFrames and (time() - encodedFrames[-1]["timeStampInFrame"]) > 0.05:
+        if encodedFrames and (time() - encodedFrames[-1]["timeStampInFrame"]) > checkInterval:
             logging.debug(
                 f"{mountPoint}: {len(encodedFrames)} frames collected. append to shared."
             )
