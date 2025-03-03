@@ -44,14 +44,14 @@ The reader processes store the data in shared memory. Seperate decoder processes
 
 The NTRIPmonitor uses the asyncpg library for efficient handling of PostgreSQL database interactions. For any multiprocessing operations, the monitor solution uses Python's built in multiprocessing library, and the asyncio library for asynchronous operations to handle IO bound tasks in each process efficiently.
 ## Run requirements and how to build
-In this section we briefly explain requirements for launching the monitor solution. Read this section carefully and follow the Setup Check List [below](#Setup-Check-List)
+In this section we briefly explain requirements for launching the monitor solution. Read this section carefully and follow the [Setup Check List](#Setup-Check-List).
 ### Environment variables
 The monitor solution uses a locally saved environment file. The environment file is required for setting the processing settings and used to declare caster/database/grafana credentials. An example of an environment file can be found at [.env.example](.env.example). Copy the example and name it ".env". Modify the settings within this file according the use case. The .env file must be located in the same folder as the [Dockerfile](Dockerfile) and [docker-compose.prod.yaml](docker-compose.prod.yaml)/[docker-compose.dev.yaml](docker-compose.dev.yaml).
 ### System requirements and docker build information
 The monitor solution is built as a series of docker containers in order to be easily deployable on any system. For information regarding the current container setup, we refer to the [docker-compose.dev.yaml](docker-compose-dev) for the test setup and [docker-compose.prod.yaml](docker-compose-prod) for the production deployment. The current setup deploys 3 containers in the monitor network; Ingestion, Grafana, Timescaledb. The grafana and timescaledb containers are pulled from their respective docker registry, whereas the Ingestion container must be built using the Dockerfile for the [Dockerfile]. 
 ### Python library requirements
 The current monitor solution requires three well-known packages to function.
-- **bitstring** is a python module that provides classes to create, manipulate and interpret binary data, allowing for easy handling of binary data structures, including reading and writing bits and bytes. For the monitor solution we specify version 3.1.9 of Bitstring in order for the [src/ntripclient.py](ntripclient) module to function properly. 
+- **bitstring** is a python module that provides classes to create, manipulate and interpret binary data, allowing for easy handling of binary data structures, including reading and writing bits and bytes.
 - **asyncpg** is an efficient fully asynchronous PostgreSQL client library for Python. It is designed for scalability and high performance with integration of modern PostgreSQL features.
 - **python-dotenv** is a Python library that reads key-value pairs from an environment file (.env), and can set them as environment variables. This is useful for managing configuration settings and sensitive information in a simple and secure way.
 
