@@ -419,7 +419,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT rp.mountpoint, latitude, longitude\r\nFROM sourcetable_constants sc\r\nJOIN (SELECT DISTINCT mountpoint FROM rtcm_packages) rp ON rp.mountpoint = sc.mountpoint\r\nWHERE rp.mountpoint IN ($mountpoints)",
+          "rawSql": "SELECT rp.mountpoint, latitude, longitude\r\nFROM sourcetable_constants sc\r\nJOIN (SELECT DISTINCT mountpoint FROM rtcm_packages WHERE $__timeFilter(receive_time)) rp ON rp.mountpoint = sc.mountpoint\r\nWHERE rp.mountpoint IN ($mountpoints)",
           "refId": "A",
           "sql": {
             "columns": [
