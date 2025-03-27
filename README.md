@@ -114,6 +114,7 @@ docker buildx build -t ntripmonitor:latest .
 ```
 This will build the docker image and store it locally under the name "ntripmonitor:latest".
 On Linux you may need to install `docker-buildx` as an additional package and run the commands with `sudo`. 
+Make sure the docker engine is running. On Windows this can be done by opening Docker Desktop.
 
 Make sure you have configured the file [.env] before deploying the network.
 To deploy the test environment.
