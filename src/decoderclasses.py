@@ -53,24 +53,21 @@ class Decoder(ABC):
 
 
     @staticmethod
-    async def batchDecodeFrame(encodedFrames: list, storeObsCheck, rtcmMessage: Rtcm3):
+    async def batchDecodeFrame(encodedFrames: list, storeObsCheck: bool, rtcmMessage: Rtcm3):
         decodedFrames = []
         decodedObs = []
-        tableList = []
         for params in encodedFrames:
             try:
                 decodedFrame, decoderResult = Decoder.getDecoder(params, storeObsCheck, rtcmMessage)
                 decodedFrames.append(decodedFrame)
                 if decoderResult is not None:
                     decodedObs.append(decoderResult["decodedObs"])
-                    tableList.append(decoderResult["table"])
                 else:
                     decodedObs.append(None)
-                    tableList.append(None)
             except Exception as error:
                 logging.error(f"Errors in grabbing decoder class : {error}")
                 continue
-        return decodedFrames, decodedObs, tableList
+        return decodedFrames, decodedObs
 
     @staticmethod
     def getDecoder(params, storeObsCheck, rtcmMessage: Rtcm3):
@@ -144,14 +141,7 @@ class DecoderPOS(Decoder):
 
     def decode(self):
         try:
-            try:
-                _, self.table = SAT_TYPE_TABLE_DICT.get(self.messageType)
-                if self.data is None and not self.data:
-                    return {"decodedObs": [], "table": self.table}
-            except Exception as error:
-                logging.error(f"Failed to get SAT_TYPE_TABLE_DICT {error}")
-            
-            # ARP given in mm as integer, convert to m as float
+            # ARP given in 1e-5 m as integer, convert to m as float
             x = self.data[1][0] / 10000.0
             y = self.data[1][1] / 10000.0
             z = self.data[1][2] / 10000.0
@@ -170,7 +160,7 @@ class DecoderPOS(Decoder):
             logging.error(f"Failed to decode ARP message {self.messageType} with error: {error}. Setting observation to None")
             self.decodedObs = None
         
-        return {"decodedObs": self.decodedObs, "table": self.table}
+        return {"decodedObs": self.decodedObs}
         
 
 class DecoderMSM(Decoder):
@@ -183,26 +173,33 @@ class DecoderMSM(Decoder):
         self.messageType = params['messageType']
         self.decodedFrame = []
         self.decodedObs = []
-        self.table = []
-        self.satType = []
 
     def decode(self):
         rtcmmessage = Rtcm3()
         try:
-            try:
-                # logging.info(f"Decoding MSM message type {self}")
-                self.satType, self.table = SAT_TYPE_TABLE_DICT.get(self.messageType)
-                if self.data is None and not self.data:
-                    return {"decodedObs": [], "table": self.table}
-            except Exception as error:
-                logging.error(f"Failed to get SAT_TYPE_TABLE_DICT {error}")
+            match self.messageType // 10:
+                case 107:
+                    constellation_id = "G"
+                case 108:
+                    constellation_id = "R"
+                case 109:
+                    constellation_id = "E"
+                case 110:
+                    constellation_id = "S"
+                case 111:
+                    constellation_id = "J"
+                case 112:
+                    constellation_id = "C"
+
+
+
             if self.messageType >= 1071 and self.messageType <= 1127:
                 obsEpochStr = Decoder.gnssEpochStr(self.messageType, self.data[0][2] / 1000.0, 1)
                 satSignals = rtcmmessage.msmSignalTypes(self.messageType, self.data[0][10])
                 signalCount = len(satSignals)
                 availSatMask = str(self.data[0][9])
                 satId = [
-                    f"{self.satType}{id + 1:02d}"
+                    f"{constellation_id}{id + 1:02d}"
                     for id in range(64)
                     if availSatMask[id] == "1"
                 ]
@@ -254,62 +251,7 @@ class DecoderMSM(Decoder):
         except Exception as error:
             logging.error(f"Failed to decode MSM frame with error: {error}. Setting observation to None")
             self.decodedObs = None
-        return {"decodedObs": self.decodedObs, "table": self.table}
-
-SAT_TYPE_TABLE_DICT = {
-    1001: ("G", "gps"),
-    1002: ("G", "gps"),
-    1003: ("G", "gps"),
-    1004: ("G", "gps"),
-    1005: (" ", "coordinates"),
-    1006: (" ", "coordinates"),
-    1071: ("G", "gps"),
-    1072: ("G", "gps"),
-    1073: ("G", "gps"),
-    1074: ("G", "gps"),
-    1075: ("G", "gps"),
-    1076: ("G", "gps"),
-    1077: ("G", "gps"),
-    1009: ("R", "glonass"),
-    1010: ("R", "glonass"),
-    1011: ("R", "glonass"),
-    1012: ("R", "glonass"),
-    1081: ("R", "glonass"),
-    1082: ("R", "glonass"),
-    1083: ("R", "glonass"),
-    1084: ("R", "glonass"),
-    1085: ("R", "glonass"),
-    1086: ("R", "glonass"),
-    1087: ("R", "glonass"),
-    1091: ("E", "galileo"),
-    1092: ("E", "galileo"),
-    1093: ("E", "galileo"),
-    1094: ("E", "galileo"),
-    1095: ("E", "galileo"),
-    1096: ("E", "galileo"),
-    1097: ("E", "galileo"),
-    1101: ("S", "sbas"),
-    1102: ("S", "sbas"),
-    1103: ("S", "sbas"),
-    1104: ("S", "sbas"),
-    1105: ("S", "sbas"),
-    1106: ("S", "sbas"),
-    1107: ("S", "sbas"),
-    1111: ("J", "qzss"),
-    1112: ("J", "qzss"),
-    1113: ("J", "qzss"),
-    1114: ("J", "qzss"),
-    1115: ("J", "qzss"),
-    1116: ("J", "qzss"),
-    1117: ("J", "qzss"),
-    1121: ("C", "beidou"),
-    1122: ("C", "beidou"),
-    1123: ("C", "beidou"),
-    1124: ("C", "beidou"),
-    1125: ("C", "beidou"),
-    1126: ("C", "beidou"),
-    1127: ("C", "beidou"),
-}
+        return {"decodedObs": self.decodedObs}
 
 DECODER_MAP = {
     1005: DecoderPOS,

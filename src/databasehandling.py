@@ -58,23 +58,84 @@ class DatabaseHandler:
 
 class NtripObservationHandler(DatabaseHandler):
     INPUTTABLE = {
-        "gps": "insert_gps_observations",
-        "coordinates": "upsert_coordinates",
-        "glonass": "insert_glonass_observations",
-        "galileo": "insert_galileo_observations",
-        "sbas": "insert_sbas_observations",
-        "qzss": "insert_qzss_observations",
-        "beidou": "insert_beidou_observations",
+        1001: "insert_gps_observations",
+        1002: "insert_gps_observations",
+        1003: "insert_gps_observations",
+        1004: "insert_gps_observations",
+
+        1005: "upsert_coordinates",
+        1006: "upsert_coordinates",
+
+        1009: "insert_glonass_observations",
+        1010: "insert_glonass_observations",
+        1011: "insert_glonass_observations",
+        1012: "insert_glonass_observations",
+
+        1071: "insert_gps_observations",
+        1072: "insert_gps_observations",
+        1073: "insert_gps_observations",
+        1074: "insert_gps_observations",
+        1075: "insert_gps_observations",
+        1076: "insert_gps_observations",
+        1077: "insert_gps_observations",
+
+        1081: "insert_glonass_observations",
+        1082: "insert_glonass_observations",
+        1083: "insert_glonass_observations",
+        1084: "insert_glonass_observations",
+        1085: "insert_glonass_observations",
+        1086: "insert_glonass_observations",
+        1087: "insert_glonass_observations",
+
+        1091: "insert_galileo_observations",
+        1092: "insert_galileo_observations",
+        1093: "insert_galileo_observations",
+        1094: "insert_galileo_observations",
+        1095: "insert_galileo_observations",
+        1096: "insert_galileo_observations",
+        1097: "insert_galileo_observations",
+
+        1101: "insert_sbas_observations",
+        1102: "insert_sbas_observations",
+        1103: "insert_sbas_observations",
+        1104: "insert_sbas_observations",
+        1105: "insert_sbas_observations",
+        1106: "insert_sbas_observations",
+        1107: "insert_sbas_observations",
+
+        1111: "insert_qzss_observations",
+        1112: "insert_qzss_observations",
+        1113: "insert_qzss_observations",
+        1114: "insert_qzss_observations",
+        1115: "insert_qzss_observations",
+        1116: "insert_qzss_observations",
+        1117: "insert_qzss_observations",
+
+        1121: "insert_beidou_observations",
+        1122: "insert_beidou_observations",
+        1123: "insert_beidou_observations",
+        1124: "insert_beidou_observations",
+        1125: "insert_beidou_observations",
+        1126: "insert_beidou_observations",
+        1127: "insert_beidou_observations",
+
+        1121: "insert_beidou_observations",
+        1122: "insert_beidou_observations",
+        1123: "insert_beidou_observations",
+        1124: "insert_beidou_observations",
+        1125: "insert_beidou_observations",
+        1126: "insert_beidou_observations",
+        1127: "insert_beidou_observations",
     }
 
     def __init__(self, dbSettings):
         super().__init__(dbSettings)
 
-    async def grabStoredProcedure(inputString: str):
-        return NtripObservationHandler.INPUTTABLE.get(inputString, None)
+    async def grabStoredProcedure(msgType: int):
+        return NtripObservationHandler.INPUTTABLE.get(msgType, None)
 
     async def dbInsertObsInfoStoredBatch(
-        self, decodedObs: list, rtcmPackageIds: list, tableList: list
+        self, decodedFrames: list, decodedObs: list, rtcmPackageIds: list
     ) -> list:
         for index, decodedObsFrame in enumerate(decodedObs):
             if decodedObsFrame is None:
@@ -91,11 +152,11 @@ class NtripObservationHandler(DatabaseHandler):
                 connection = await self.getConnection()
                 try:
                     stored_procedure = await NtripObservationHandler.grabStoredProcedure(
-                        tableList[index]
+                        decodedFrames[index][3]
                     )
                     if stored_procedure is None:
                         logging.error(
-                            f"No stored procedure found for table identifier: {tableList[index]}"
+                            f"No stored procedure found for RTCM message identifier: {decodedFrames[index][3]}"
                         )
                         continue
                     query = f"SELECT {stored_procedure}($1::json)"
@@ -132,13 +193,12 @@ class NtripObservationHandler(DatabaseHandler):
         self,
         decodedFrames: list,
         decodedObs: list,
-        tableList: list,
     ) -> None:
         try:
             rtcmPackageIds = await self.dbInsertRtcmInfoStoredBatch(decodedFrames)
             if self.dbSettings.storeObservations and rtcmPackageIds is not None:
                 await self.dbInsertObsInfoStoredBatch(
-                    decodedObs, rtcmPackageIds, tableList
+                    decodedFrames, decodedObs, rtcmPackageIds
                 )
             elif rtcmPackageIds is not None:
                 logging.debug(

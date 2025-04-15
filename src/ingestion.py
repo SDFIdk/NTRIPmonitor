@@ -137,12 +137,11 @@ async def decodeInsertConsumer(
                             (
                                 decodedFrames,
                                 decodedObs,
-                                tableList,
                             ) = await decoderclasses.Decoder.batchDecodeFrame(
                                 encodedFrames, dbSettings.storeObservations, rtcmMessage
                             )
                             await dBHandler.dbInsertBatch(
-                                decodedFrames, decodedObs, tableList
+                                decodedFrames, decodedObs
                             )
                         except Exception as error:
                             logging.error(
