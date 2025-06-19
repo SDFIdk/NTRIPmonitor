@@ -167,7 +167,7 @@ BEGIN
            (json_array_elements->>6)::decimal(7,4), 
            (json_array_elements->>7)::text
     FROM json_array_elements(mountpointTable)
-    ON CONFLICT (mountpoint, countrycode, casterprovider) 
+    ON CONFLICT (mountpoint, countrycode, casterprovider)
     DO UPDATE SET 
         city = EXCLUDED.city, 
         rtcmver = EXCLUDED.rtcmver, 

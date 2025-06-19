@@ -14,4 +14,4 @@ COPY ./src/ ./
 COPY ./src/settings.py ./settings.py
 COPY ./src/ingestion.py ./ingestion.py
 
-CMD ["python3", "ingestion.py"]
+ENTRYPOINT ["python3", "ingestion.py"]
