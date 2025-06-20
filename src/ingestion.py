@@ -49,8 +49,7 @@ class SignalHandler:
             self.loop.add_signal_handler(sig, self.shutdown, sig)
 
     def shutdown(self, sig: signal.Signals) -> None:
-        logging.info(f"Received exit signal {sig.name} on loop {id(self.loop)}. Initiating graceful shutdown.")
-        logging.info(f"At the points we send signals to {self.processes}")
+        logging.info(f"Received signal {sig.name}. Initiating graceful shutdown.")
         global INIT_GRACEFUL_SHUTDOWN
         INIT_GRACEFUL_SHUTDOWN = True
         for proc in self.processes:
@@ -93,7 +92,7 @@ async def watchdogHandler(
             
             await asyncio.sleep(30)  # Sleep for 30 seconds
     except asyncio.CancelledError:
-        logging.info(f"Watchdog on loop {id(asyncio.get_running_loop())} closed.") 
+        logging.debug(f"Watchdog on loop {id(asyncio.get_running_loop())} closed.") 
 
 
 def clearList(sharedList):
@@ -168,7 +167,7 @@ async def decodeInsertConsumer(
         if dBHandler:
             await dBHandler.closePool()
         
-        logging.info(f"decodeInsertConsumer on loop {id(asyncio.get_running_loop())} done.")
+        logging.debug(f"decodeInsertConsumer on loop {id(asyncio.get_running_loop())} done.")
             
 
 
@@ -292,7 +291,7 @@ async def periodicFrameAppender(
                     f"An error occurred in periodic check for appending frames: {error}"
                 )
     
-    logging.info(f"Closed periodicFrameAppender on loop {id(asyncio.get_running_loop())}.")
+    logging.debug(f"periodicFrameAppender on loop {id(asyncio.get_running_loop())} closed.")
 
     return
 
@@ -341,15 +340,12 @@ async def procRtcmStream(
     # we end here by closing the connection
 
     ntripclient.ntripWriter.close()
+    # Fails on SSL connection and commented out:
     # await ntripclient.ntripWriter.wait_closed()
     while not ntripclient.ntripWriter.is_closing():
         logging.info(f"Waiting for connection to close: {mountPoint}.")
         await asyncio.sleep(0.5)
-    # logging.info(f"Connection closed to {mountPoint}.")
-    # logging.info(f"Closing connection to {mountPoint}: {ntripclient.ntripWriter.is_closing()}")    
-    # await ntripclient.ntripWriter.wait_closed()
-    # logging.info(f"Closing connection to {mountPoint}: {ntripclient.ntripWriter.is_closing()}")
-    logging.info(f"Closed connection to {mountPoint}.")
+    logging.info(f"{mountPoint}: Closed connection.")
     return
 
 async def rtcmStreamTasks(
@@ -382,7 +378,7 @@ async def rtcmStreamTasks(
     # We wait until a signal is sent
     while not pipe_read.poll():
         await asyncio.sleep(1)
-    logging.info(f"Received shutdown signal on loop {id(asyncio.get_running_loop())}.")
+    logging.debug(f"Reader process on loop {id(asyncio.get_running_loop())} received shutdown signal.")
     global INIT_GRACEFUL_SHUTDOWN
     INIT_GRACEFUL_SHUTDOWN = True
     tasks["watchdog"].cancel()
@@ -390,7 +386,7 @@ async def rtcmStreamTasks(
     # Wait for each task to complete
     await asyncio.gather(*tasks.values())
 
-    logging.info(f"Shut down loop {id(asyncio.get_running_loop())}.")
+    logging.debug(f"Reader process on loop {id(asyncio.get_running_loop())} done.")
 
 
 
@@ -819,14 +815,14 @@ def RunMultiProcessing(
         signal_handler = SignalHandler(loop, readingProcesses + decoderProcesses)
         # we run forever until the process is interrupted/killed from OS
         loop.run_forever()
-        logging.info(f"Main asyncio loop {id(loop)} ended. Joining processes.")
+        logging.debug(f"Main asyncio loop {id(loop)} ended. Joining processes.")
 
         for readingProcess in readingProcesses:
             readingProcess.join()
         for decodingProcess in decoderProcesses:
             decodingProcess.join()
 
-        logging.info(f"Processes joined. Goodbye!")        
+        logging.info(f"Goodbye!")
 
 
 
