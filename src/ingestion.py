@@ -19,13 +19,14 @@ settings. The settings include the details for the NTRIP caster and the database
 import asyncio
 import json
 import logging
-import typing
+import signal
 import os
 from argparse import ArgumentParser
 from configparser import ConfigParser
 import math
-from multiprocessing import Lock, Manager, Process
-from sys import exit
+from multiprocessing import Lock, Manager, Process, Pipe
+from multiprocessing.connection import Connection
+
 from time import time, sleep
 from dotenv import load_dotenv
 
@@ -36,15 +37,25 @@ from settings import CasterSettings, DbSettings, MultiprocessingSettings
 import decoderclasses
 from rtcm3 import Rtcm3
 
+INIT_GRACEFUL_SHUTDOWN = False
 
-def procSigint(signum: int, frame: typing.types.FrameType) -> None:
-    logging.warning("Received SIGINT. Shutting down, Adjø!")
-    exit(3)
+class SignalHandler:
+    """Signal handler for graceful shutdown"""
 
+    def __init__(self, loop, processes = list[Process]):
+        self.loop = loop
+        self.processes = processes
+        for sig in (signal.SIGHUP, signal.SIGTERM, signal.SIGINT):
+            self.loop.add_signal_handler(sig, self.shutdown, sig)
 
-def procSigterm(signum: int, frame: typing.types.FrameType) -> None:
-    logging.warning("Received SIGTERM. Shutting down, Adjø!")
-    exit(4)
+    def shutdown(self, sig: signal.Signals) -> None:
+        logging.info(f"Received signal {sig.name}. Initiating graceful shutdown.")
+        global INIT_GRACEFUL_SHUTDOWN
+        INIT_GRACEFUL_SHUTDOWN = True
+        for proc in self.processes:
+            proc.pipe_write.send(1)
+        
+        self.loop.stop()
 
 
 async def watchdogHandler(
@@ -54,31 +65,34 @@ async def watchdogHandler(
     sharedEncoded: list,
     lock,
 ) -> None:
-    while True:
-        await asyncio.sleep(30)  # Sleep for 30 seconds
+    try:
+        while not INIT_GRACEFUL_SHUTDOWN:
+            runningTasks = asyncio.all_tasks()
+            runningTasks = [task for task in runningTasks if task.get_name() != "watchdog"]
+            runningTaskNames = [runningTask.get_name() for runningTask in runningTasks]
 
-        runningTasks = asyncio.all_tasks()
-        runningTasks = [task for task in runningTasks if task.get_name() != "watchdog"]
-        runningTaskNames = [runningTask.get_name() for runningTask in runningTasks]
-
-        if len(runningTasks) <= len(mountPointList):
-            logging.debug(f"{runningTaskNames} tasks running, {mountPointList} wanted.")
-            # For each desired task
-            for wantedTask in mountPointList:
-                casterId, mountpoint = wantedTask
-                if mountpoint not in runningTaskNames:
-                    casterSettings = casterSettingsDict[casterId]
-                    tasks[mountpoint] = asyncio.create_task(
-                        procRtcmStream(
-                            casterSettings,
-                            dbSettings,
-                            mountpoint,
-                            lock,
-                            sharedEncoded,
-                        ),
-                        name=mountpoint,
-                    )
-                    logging.warning(f"{mountpoint} RTCM stream restarted.")
+            if len(runningTasks) <= len(mountPointList):
+                logging.debug(f"{runningTaskNames} tasks running, {mountPointList} wanted.")
+                # For each desired task
+                for wantedTask in mountPointList:
+                    casterId, mountpoint = wantedTask
+                    if mountpoint not in runningTaskNames:
+                        casterSettings = casterSettingsDict[casterId]
+                        tasks[mountpoint] = asyncio.create_task(
+                            procRtcmStream(
+                                casterSettings,
+                                dbSettings,
+                                mountpoint,
+                                lock,
+                                sharedEncoded,
+                            ),
+                            name=mountpoint,
+                        )
+                        logging.warning(f"{mountpoint} RTCM stream restarted.")
+            
+            await asyncio.sleep(30)  # Sleep for 30 seconds
+    except asyncio.CancelledError:
+        logging.debug(f"Watchdog on loop {id(asyncio.get_running_loop())} closed.") 
 
 
 def clearList(sharedList):
@@ -89,73 +103,72 @@ async def decodeInsertConsumer(
     sharedEncoded,
     dbSettings,
     lock,
+    pipe_read: Connection,
     fail: int = 0,
     retry: int = 3,
     checkInterval: float = 0.1,
 ):
     dBHandler = None
     rtcmMessage = Rtcm3()
+
     while True:
-        if dbSettings:
-            while True:
-                try:
-                    dBHandler = NtripObservationHandler(dbSettings)
-                    await dBHandler.initializePool()
-                    break
-                except Exception as error:
-                    fail += 1
-                    sleepTime = 5 * fail
-                    if sleepTime > 300:
-                        sleepTime = 300
-                    logging.error(
-                        "Failed to connect to database server: "
-                        f"{dbSettings.database}@{dbSettings.host} "
-                        f"with error: {error}"
-                    )
-                    logging.error(
-                        f"Will retry database connection in {sleepTime} seconds!"
-                    )
-                    await asyncio.sleep(sleepTime)
-            logging.info(
-                f"Connected to database: {dbSettings.database}@{dbSettings.host}."
-            )
         try:
-            while True:
-                await asyncio.sleep(checkInterval)
-                if sharedEncoded:
-                    lock.acquire()
-                    # Perform the list and clearList operations directly in the asyncio event loop
-                    encodedFramesList = list(sharedEncoded)
-                    clearList(sharedEncoded)
-                    lock.release()
-                    # Loop over all encoded frames and decode and insert the data
-                    logging.debug(
-                        f"Decoding {len(encodedFramesList)} sets of frames with a total of {sum(len(frames) for frames in encodedFramesList)} frames."
-                    )
-                    for encodedFrames in encodedFramesList:
-                        try:
-                            (
-                                decodedFrames,
-                                decodedObs,
-                                tableList,
-                            ) = await decoderclasses.Decoder.batchDecodeFrame(
-                                encodedFrames, dbSettings.storeObservations, rtcmMessage
-                            )
-                            await dBHandler.dbInsertBatch(
-                                decodedFrames, decodedObs, tableList
-                            )
-                        except Exception as error:
-                            logging.error(
-                                f"An error occurred while batch decoding or batch inserting: {error}"
-                            )
+            dBHandler = NtripObservationHandler(dbSettings)
+            await dBHandler.initializePool()
+            break
         except Exception as error:
-            logging.error(f"An error occurred while decoding and appending {error}")
-            lock.release()
-        finally:
-            if lock.locked():
+            fail += 1
+            sleepTime = 5 * fail
+            if sleepTime > 300:
+                sleepTime = 300
+            logging.error(
+                "Failed to connect to database server: "
+                f"{dbSettings.database}@{dbSettings.host} "
+                f"with error: {error}"
+            )
+            logging.error(
+                f"Will retry database connection in {sleepTime} seconds!"
+            )
+            await asyncio.sleep(sleepTime)
+    logging.info(
+        f"Connected to database: {dbSettings.database}@{dbSettings.host}."
+    )
+    try:
+        while not pipe_read.poll():
+            await asyncio.sleep(checkInterval)
+            if sharedEncoded:
+                lock.acquire()
+                # Perform the list and clearList operations directly in the asyncio event loop
+                encodedFramesList = list(sharedEncoded)
+                clearList(sharedEncoded)
                 lock.release()
-            if dBHandler:
-                await dBHandler.closePool()
+                # Loop over all encoded frames and decode and insert the data
+                logging.debug(
+                    f"Decoding {len(encodedFramesList)} sets of frames with a total of {sum(len(frames) for frames in encodedFramesList)} frames."
+                )
+                for encodedFrames in encodedFramesList:
+                    try:
+                        (
+                            decodedFrames,
+                            decodedObs,
+                        ) = await decoderclasses.Decoder.batchDecodeFrame(
+                            encodedFrames, dbSettings.storeObservations, rtcmMessage
+                        )
+                        await dBHandler.dbInsertBatch(
+                            decodedFrames, decodedObs
+                        )
+                    except Exception as error:
+                        logging.error(
+                            f"An error occurred while batch decoding or batch inserting: {error}"
+                        )
+    except Exception as error:
+        logging.error(f"An error occurred while decoding and appending {error}")
+    finally:
+        if dBHandler:
+            await dBHandler.closePool()
+        
+        logging.debug(f"decodeInsertConsumer on loop {id(asyncio.get_running_loop())} done.")
+            
 
 
 def mountpointSplitter(casterSettingsDict: dict, maxProcesses: int) -> list:
@@ -249,7 +262,7 @@ def mountpointSplitter(casterSettingsDict: dict, maxProcesses: int) -> list:
 
 
 async def appendToList(listToAppend, sharedList, lock):
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     await loop.run_in_executor(None, lock.acquire)
     try:
         sharedList.append(listToAppend)
@@ -262,7 +275,7 @@ async def appendToList(listToAppend, sharedList, lock):
 async def periodicFrameAppender(
     encodedFrames, sharedEncoded, lock, mountPoint, checkInterval=0.05
 ):
-    while True:
+    while not INIT_GRACEFUL_SHUTDOWN:
         await asyncio.sleep(
             checkInterval
         )  # Wait for a short period to avoid hogging the CPU
@@ -277,6 +290,10 @@ async def periodicFrameAppender(
                 logging.error(
                     f"An error occurred in periodic check for appending frames: {error}"
                 )
+    
+    logging.debug(f"periodicFrameAppender on loop {id(asyncio.get_running_loop())} closed.")
+
+    return
 
 
 async def procRtcmStream(
@@ -301,7 +318,7 @@ async def procRtcmStream(
     )
 
     try:
-        while True:
+        while not INIT_GRACEFUL_SHUTDOWN:
             try:
                 frames_in_buffer, timeStamp = await ntripclient.getRtcmFrame()
                 for rtcmFrame in frames_in_buffer:
@@ -313,8 +330,6 @@ async def procRtcmStream(
                             "mountPoint": mountPoint,
                         }
                     )
-                if fail > 0:
-                    fail = 0
             except (ConnectionError, IOError, IndexError):
                 ntripclient = await ntripLogger.requestStream(
                     ntripclient, casterSettings, log_disconnect=True
@@ -322,6 +337,16 @@ async def procRtcmStream(
     except:
         await ntripLogger.closePool()
 
+    # we end here by closing the connection
+
+    ntripclient.ntripWriter.close()
+    # Fails on SSL connection and commented out:
+    # await ntripclient.ntripWriter.wait_closed()
+    while not ntripclient.ntripWriter.is_closing():
+        logging.info(f"Waiting for connection to close: {mountPoint}.")
+        await asyncio.sleep(0.5)
+    logging.info(f"{mountPoint}: Closed connection.")
+    return
 
 async def rtcmStreamTasks(
     casterSettingsDict: dict,
@@ -329,8 +354,8 @@ async def rtcmStreamTasks(
     mountPointList: list,
     sharedEncoded: list,
     lock,
+    pipe_read: Connection
 ) -> None:
-
     tasks = {}
     for casterId, mountpoint in mountPointList:
         casterSettings = casterSettingsDict[casterId]
@@ -350,8 +375,19 @@ async def rtcmStreamTasks(
         watchdogHandler(casterSettingsDict, mountPointList, tasks, sharedEncoded, lock)
     )
 
+    # We wait until a signal is sent
+    while not pipe_read.poll():
+        await asyncio.sleep(1)
+    logging.debug(f"Reader process on loop {id(asyncio.get_running_loop())} received shutdown signal.")
+    global INIT_GRACEFUL_SHUTDOWN
+    INIT_GRACEFUL_SHUTDOWN = True
+    tasks["watchdog"].cancel()
+
     # Wait for each task to complete
     await asyncio.gather(*tasks.values())
+
+    logging.debug(f"Reader process on loop {id(asyncio.get_running_loop())} done.")
+
 
 
 async def getMountpoints(
@@ -661,11 +697,15 @@ class parallelProcess:
         except AttributeError:
             pass
 
+        self.pipe_read, self.pipe_write = Pipe(duplex=False)
         self.process = Process(target=self.run)
         self.process.start()
 
     def join(self) -> None:
         self.process.join()
+
+    def close(self) -> None:
+        self.process.close()
 
 
 class readerProcess(parallelProcess):
@@ -686,7 +726,7 @@ class readerProcess(parallelProcess):
     def run(self):
         asyncio.run(
             rtcmStreamTasks(
-                self.caster, self.database, self.mountpoints, self.shared, self.lock
+                self.caster, self.database, self.mountpoints, self.shared, self.lock, self.pipe_read
             )
         )
 
@@ -701,10 +741,30 @@ class decoderProcess(parallelProcess):
         self.lock = lock
 
     def run(self):
-        asyncio.run(decodeInsertConsumer(self.shared, self.database, self.lock))
+        asyncio.run(decodeInsertConsumer(self.shared, self.database, self.lock, self.pipe_read))
 
     def __repr__(self):
         return f"Decoder with shared memory {hex(id(self.shared))}"
+
+async def processWatcher(processes: list[parallelProcess]) -> None:
+    """
+    Checks threads periodically for crashes
+    """
+    logging.info(f"Introducing watcher for {processes}")
+    while True:
+        # Wait 300 seconds between checking processes for aliveness
+        await asyncio.sleep(300)
+
+        for proc in processes:
+            exitcode = proc.process.exitcode
+            logging.debug(
+                f"Checking process {proc} {proc.process} which has exit_code {exitcode}."
+            )
+            if exitcode is not None:
+                logging.warning(
+                    f"Restarting process {proc} {proc.process} with un-expected exit_code {exitcode}."
+                )
+                proc.start()
 
 
 def RunMultiProcessing(
@@ -750,27 +810,20 @@ def RunMultiProcessing(
         for decodingProcess in decoderProcesses:
             decodingProcess.start()
 
-        # here we introduce a watcher
-        logging.info(f"Introducing watcher for {readingProcesses + decoderProcesses}")
-        while True:
-            # Wait 300 seconds between checking processes for aliveness
-            sleep(300)
-
-            for proc in readingProcesses + decoderProcesses:
-                exitcode = proc.process.exitcode
-                logging.debug(
-                    f"Checking process {proc} {proc.process} which has exit_code {exitcode}."
-                )
-                if exitcode is not None:
-                    logging.warning(
-                        f"Restarting process {proc} {proc.process} with un-expected exit_code {exitcode}."
-                    )
-                    proc.start()
+        # here we set up a main asyncio loop, which takes care of signal handling and passing on 
+        loop = asyncio.new_event_loop()
+        signal_handler = SignalHandler(loop, readingProcesses + decoderProcesses)
+        # we run forever until the process is interrupted/killed from OS
+        loop.run_forever()
+        logging.debug(f"Main asyncio loop {id(loop)} ended. Joining processes.")
 
         for readingProcess in readingProcesses:
             readingProcess.join()
         for decodingProcess in decoderProcesses:
             decodingProcess.join()
+
+        logging.info(f"Goodbye!")
+
 
 
 def runSingleProcessing(casterSettingsDict: dict, dbSettings: DbSettings):
@@ -790,31 +843,18 @@ def main(
     casterSettings (CasterSettings): An instance of CasterSettings containing the caster settings.
     dbSettings (DbSettings): An instance of DbSettings containing the database connection details.
     """
-    while True:
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            loop.run_until_complete(waitDbConnection(dbSettings))
-            sleep(5)
-            break
-        except Exception as error:
-            sleep(3)
+    loop = asyncio.new_event_loop()
+
+    loop.run_until_complete(waitDbConnection(dbSettings))
 
     initializationLogger(
         casterSettingsDict, dbSettings, processingSettings
     )  # Setup statistics
 
     # Download the source table from casters.
-    try:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        casterStatus = loop.run_until_complete(
-            downloadSourceTable(casterSettingsDict, dbSettings)
-        )
-        sleep(3)
-    except Exception as error:
-        sleep(3)
-    sleep(3)
+    casterStatus = loop.run_until_complete(
+        downloadSourceTable(casterSettingsDict, dbSettings)
+    )
 
     # reduce caster dictionary to contain only active casters
     casterSettingsDict = reduceCasterDict(casterSettingsDict, casterStatus)

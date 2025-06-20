@@ -7,7 +7,7 @@
     - [Python library requirements](#python-library-requirements)
     - [Configuring the .env](#configuring-the-env)
     - [Building docker images and deploying a docker network](#building-docker-images-and-deploying-a-docker-network)
-    - [New User Check List](#new-user-check-list)
+    - [Setup Check List](#setup-check-list)
 - [Ingestion](#ingestion)
   - [Multiprocessing](#multi-processing)
     - [Overview of multiprocessing environment variables](#overview-of-multiprocessing-variables)
@@ -15,8 +15,6 @@
       - [Process of the individual reading process](#process-of-the-individual-reading-process)
     - [Multiprocessing - Decoder processes](#multiprocessing---decoder-processes)
       - [process of the individual decoder process](#process-of-the-individual-decoder-process)
-  - [Single processing](#single-processing)
-    - [Asynchronous operations](#asynchronous-operations)
   - [Disconnect/Reconnect log handling](#disconnectreconnect-log-handling)
   - [NTRIP, RTCM3 and Decoding](#ntrip-rtcm3-and-decoding)
     - [NtripClient Module](#ntripclient-module)
@@ -46,14 +44,18 @@ The NTRIPmonitor uses the asyncpg library for efficient handling of PostgreSQL d
 ## Run requirements and how to build
 In this section we briefly explain requirements for launching the monitor solution. Read this section carefully and follow the [Setup Check List](#Setup-Check-List).
 ### Environment variables
-The monitor solution uses a locally saved environment file. The environment file is required for setting the processing settings and used to declare caster/database/grafana credentials. An example of an environment file can be found at [.env.example](.env.example). Copy the example and name it ".env". Modify the settings within this file according the use case. The .env file must be located in the same folder as the [Dockerfile](Dockerfile) and [docker-compose.prod.yaml](docker-compose.prod.yaml)/[docker-compose.dev.yaml](docker-compose.dev.yaml).
+The monitor solution uses a locally saved environment file. The environment file is required for setting the processing settings and used to declare credentials for the database (username required to be "postgres"), grafana and NTRIP casters. An example of an environment file can be found at [.env.example](.env.example). Copy the example and name it ".env". Modify the settings within this file according to your use case. The .env file must be located in the same folder as the [Dockerfile](Dockerfile) and [docker-compose.prod.yaml](docker-compose.prod.yaml)/[docker-compose.dev.yaml](docker-compose.dev.yaml).
 ### System requirements and docker build information
-The monitor solution is built as a series of docker containers in order to be easily deployable on any system. For information regarding the current container setup, we refer to the [docker-compose.dev.yaml](docker-compose-dev) for the test setup and [docker-compose.prod.yaml](docker-compose-prod) for the production deployment. The current setup deploys 3 containers in the monitor network; Ingestion, Grafana, Timescaledb. The grafana and timescaledb containers are pulled from their respective docker registry, whereas the Ingestion container must be built using the Dockerfile for the [Dockerfile]. 
+The monitor solution is built as a series of docker containers in order to be easily deployable on any system.
+For information regarding the current container setup, we refer to the [docker-compose.dev.yaml](docker-compose-dev) for the test setup and [docker-compose.prod.yaml](docker-compose-prod) for the production deployment.
+The current setup deploys 3 containers in the monitor network; Ingestion, Grafana, Timescaledb.
+The grafana and timescaledb containers are pulled from their respective docker registry, whereas the Ingestion container must be build using the [Dockerfile](Dockerfile). 
 ### Python library requirements
 The current monitor solution requires three well-known packages to function.
 - **bitstring** is a python module that provides classes to create, manipulate and interpret binary data, allowing for easy handling of binary data structures, including reading and writing bits and bytes.
 - **asyncpg** is an efficient fully asynchronous PostgreSQL client library for Python. It is designed for scalability and high performance with integration of modern PostgreSQL features.
 - **python-dotenv** is a Python library that reads key-value pairs from an environment file (.env), and can set them as environment variables. This is useful for managing configuration settings and sensitive information in a simple and secure way.
+Note that these packages are build into the Ingestion container and are not required to be installed manually.
 
 ### Configuring the .env
 
@@ -65,7 +67,7 @@ The first section of variables deal with local resources:
 | Variable | Description |
 |---|---|
 | NTRIP_DOCKER_REGISTRY | Location of NTRIPmonitor docker image. If building locally set to ntripmonitor:latest |
-| NTRIP_DATAMOUNT | Location of data to store. If set to Empty, there wil be no data persistence. Only used in production environment.:q |
+| NTRIP_DATAMOUNT | Location of data to store. If set to Empty, there wil be no data persistence. Only used in production environment. |
 | DB_CPU | Integer number of CPU's available for the database. |
 | DB_MEMORY | Amount of memory availabe for the database. E.g. 32GB |
 | INGEST_CPU | Integer (FLOAT?) number of CPU's available for ingestion. E.g. 8 |
@@ -74,7 +76,7 @@ The first section of variables deal with local resources:
 The second section of variables deal with the database setup. All can be left to their default values.
 | Variable | Description |
 |---|---|
-| DB_USER | Choose a username for the database. Default: postgres |
+| DB_USER | Username for the database. Default: postgres |
 | DB_PASSWORD | Choose a password for the database. |
 | DB_NAME | Default: UREGA |
 | DB_HOST | Default: timescaledb |
@@ -86,17 +88,19 @@ The third section of variables deal with Grafana
 |---|---|
 | GRAFANA_USER | Choose a username for Grafana. |
 | GRAFANA_PASSWORD | Choose a password for Grafana. |
+| GRAFANA_ENABLE_SMTP | Enable SMTP for email alerting. Default:false |
+| GRAFANA_SMTP_HOST | SMTP host name including port number. |
 
 The fourth section of variables are the multiprocessing settings. These are described in the section on Multiprocessing below.
 
 The remaining sections configure one or more casters. Different casters can be separated by using different characters before the first underscore.
 | Variable | Description |
 |---|---|
-| FIRST_CASTER_ID | Name for caster to be used internally |
+| FIRST_CASTER_ID | Name for caster to be used internally. |
 | FIRST_CASTER_URL | URL and port of caster. E.g.: https://ntrip.dataforsyningen.dk:443 |
 | FIRST_CASTER_USER | Username to log on to caster |
 | FIRST_CASTER_PASSWORD | Password |
-| FIRST_CASTER_MOUNTPOINT | Comma-separated list of mountpoints to monitor. E.g. BUDD,MOJN |
+| FIRST_CASTER_MOUNTPOINT | Comma-separated list of mountpoints to monitor. E.g. BUDD00DNK,MOJN00DNK |
 
 > [!WARNING]
 > Be careful not to save sensitive information in the template to avoid accidentally uploading this to Github.
@@ -109,6 +113,8 @@ In a terminal, enter the directory of this code. To build the docker image, exec
 docker buildx build -t ntripmonitor:latest .
 ```
 This will build the docker image and store it locally under the name "ntripmonitor:latest".
+On Linux you may need to install `docker-buildx` as an additional package and run the commands with `sudo`. 
+Make sure the docker engine is running. On Windows this can be done by opening Docker Desktop.
 
 Make sure you have configured the file [.env] before deploying the network.
 To deploy the test environment.
@@ -120,7 +126,7 @@ docker-compose -f docker-compose.dev.yaml up -d
 The flag `-d` starts the docker environment in the background.
 If you are ready to deploy the production environment replace `docker-compose.dev.yaml` with `docker-compose.prod.yaml`.
 
-Your NTRIPmonitor instance is now up and running.
+Your NTRIPmonitor instance is now up and running and you can access grafana (default port: 18000) in your web browser.
 
 ### Setup Check List
 Checklist for launching the monitor solution. 
@@ -172,15 +178,6 @@ The decoder process in simple terms:
 - Each dataentry is decoded and assigned a table string.
 - The data is packed in a JSON format and sent to the database through a stored procedure. The stored procedures to use is determined by the table string. 
 - Repeat
-
-## Single-core processing
-
-Functionality under development.
-Documentation coming soon.
-
-### Asynchronous operations
-
-Documentation coming soon.
 
 ## Disconnect/Reconnect log handling
 Disconnects and reconnects of individual mountpoints are currently handled in the [src/databasehandling.py](NtripLogHandler) class.
