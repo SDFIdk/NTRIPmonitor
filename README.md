@@ -7,7 +7,7 @@
     - [Python library requirements](#python-library-requirements)
     - [Configuring the .env](#configuring-the-env)
     - [Building docker images and deploying a docker network](#building-docker-images-and-deploying-a-docker-network)
-    - [New User Check List](#new-user-check-list)
+    - [Setup Check List](#setup-check-list)
 - [Ingestion](#ingestion)
   - [Multiprocessing](#multi-processing)
     - [Overview of multiprocessing environment variables](#overview-of-multiprocessing-variables)
@@ -15,8 +15,6 @@
       - [Process of the individual reading process](#process-of-the-individual-reading-process)
     - [Multiprocessing - Decoder processes](#multiprocessing---decoder-processes)
       - [process of the individual decoder process](#process-of-the-individual-decoder-process)
-  - [Single processing](#single-processing)
-    - [Asynchronous operations](#asynchronous-operations)
   - [Disconnect/Reconnect log handling](#disconnectreconnect-log-handling)
   - [NTRIP, RTCM3 and Decoding](#ntrip-rtcm3-and-decoding)
     - [NtripClient Module](#ntripclient-module)
@@ -90,6 +88,8 @@ The third section of variables deal with Grafana
 |---|---|
 | GRAFANA_USER | Choose a username for Grafana. |
 | GRAFANA_PASSWORD | Choose a password for Grafana. |
+| GRAFANA_ENABLE_SMTP | Enable SMTP for email alerting. Default:false |
+| GRAFANA_SMTP_HOST | SMTP host name including port number. |
 
 The fourth section of variables are the multiprocessing settings. These are described in the section on Multiprocessing below.
 
@@ -178,15 +178,6 @@ The decoder process in simple terms:
 - Each dataentry is decoded and assigned a table string.
 - The data is packed in a JSON format and sent to the database through a stored procedure. The stored procedures to use is determined by the table string. 
 - Repeat
-
-## Single-core processing
-
-Functionality under development.
-Documentation coming soon.
-
-### Asynchronous operations
-
-Documentation coming soon.
 
 ## Disconnect/Reconnect log handling
 Disconnects and reconnects of individual mountpoints are currently handled in the [src/databasehandling.py](NtripLogHandler) class.
