@@ -1,0 +1,236 @@
+# Default values for ntripmonitor.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
+replicaCount: 1
+
+# This is to override the chart name.
+nameOverride: ""
+fullnameOverride: ""
+
+# This is for setting Kubernetes Annotations to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+podAnnotations: {}
+# This is for setting Kubernetes Labels to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+podLabels: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+# Additional volumes on the output Deployment definition.
+volumes: []
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+# This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
+image:
+  repository: ntripmonitor
+  # This sets the pull policy for images.
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is "latest".
+  tag: ""
+
+# This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+imagePullSecrets: []
+
+# Additional volumeMounts on the output Deployment definition.
+volumeMounts: {}
+
+resources: 
+  limits:
+    cpu: "1"
+    memory: "1Gi"
+  requests:
+    cpu: "1"
+    memory: "1Gi"
+
+ingest:
+  # Sets env INGEST_CPU
+  #	Integer (FLOAT?) number of CPU's available for ingestion
+  cpu: 1
+  # Sets env INGEST_MEMORY
+  #	Amount of memory available for the ingestion
+  memory: 1GB
+db:
+  # Sets env DB_CPU
+  #	Integer number of CPU's available for the database
+  cpu: 1
+  # Sets env DB_MEMORY
+  #	Amount of memory available for the database
+  memory: 1GB
+
+# This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+
+grafana:
+  # host used by the server
+  server: grafana.ntrip.test.com
+
+  # username for grafana
+  user: grafana
+
+  # Enable SMTP for email alerting
+  enable_smtp: "false"
+
+  # # SMTP host name including port number
+  # smtp_host: HOST_ADDRESS:PORT
+  storage:
+    size: 1Gi
+    storageClassName: local-path
+
+  securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+  # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
+  image:
+    # version of the image grafana/grafana
+    version: 11.1.4
+
+  # This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  imagePullSecrets: []
+
+  # Additional volumeMounts on the output Deployment definition.
+  volumeMounts: []
+
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  # This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+  livenessProbe:
+    httpGet:
+      path: /
+      port: http
+  readinessProbe:
+    httpGet:
+      path: /
+      port: http
+
+  # This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
+  service:
+    # This sets the service type more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+    type: ClusterIP
+    # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
+    port: 80
+
+timescaledb:
+
+  # Name of the database
+  dbName : UREGA
+
+  # Sets DB_USER env and data source url for grafana
+  name: timescaledb
+
+  # port: 5432
+
+  image:
+    # image should be cnpg compatible and have timescale extension pre-loaded
+    repository: ghcr.io/clevyr/cloudnativepg-timescale
+    # This sets the pull policy for images.
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is "latest".
+    tag: 14-ts2
+
+  # This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  imagePullSecrets: []
+
+  # Additional volumeMounts on the output Deployment definition.
+  volumeMounts: []
+  # - name: foo
+  #   mountPath: "/etc/foo"
+  #   readOnly: true
+
+  resources:
+    limits:
+      cpu: "1"
+      memory: "1Gi"
+    requests:
+      cpu: "1"
+      memory: "1Gi"
+
+  # Storing observations extracted from MSM messages can lead to large amounts of data. Default: True
+  storeObservations: "True"
+
+  # Username for the database
+  dbUser: postgres
+
+  storageClass: rook-ceph-block
+  size: 50Gi
+  # default retention policy is for 2 months
+  retentionPolicy: "2 months"
+
+firstCaster:
+  # Name for caster to be used internally.
+  id: CasterOne
+
+  # URL and port of caster. E.g.: https://ntrip.dataforsyningen.dk:443
+  url: http://ntripcaster-relay:2101
+
+  # Username to log on to caster
+  user: sdfe1
+
+  # # Password to log on to caster
+  # # default value is set to user
+  # password:
+  
+  # # Comma-separated list of mountpoints to monitor. E.g. BUDD00DNK,MOJN00DNK
+  # mountpoint: BUDD00DNK,MOJN00DNK
+
+# This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+# This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

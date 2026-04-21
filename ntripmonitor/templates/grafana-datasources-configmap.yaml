@@ -1,0 +1,41 @@
+apiVersion: v1
+data:
+  urega.yaml: |
+    # config file version
+    apiVersion: 2
+
+    # list of datasources that should be deleted from the database
+    deleteDatasources:
+      - name: UREGA
+        orgId: 1
+
+    # list of datasources to insert/update depending
+    # what's available in the database
+
+    datasources:
+      - name: UREGA
+        database: UREGA
+        type: postgres
+        access: proxy
+        orgId: 1
+        uid: UYgXEmhnz
+        url: {{ .Values.timescaledb.host | default "timescaledb" }}-rw:{{ .Values.timescaledb.port | default "5432" }}
+        password: ""
+        user: {{ .Values.timescaledb.dbUser | default "postgres" }}
+        basicAuth: false
+        isDefault: true
+        readOnly: true
+        jsonData:
+          postgresVersion: 1200
+          sslmode: disable
+          timescaledb: true
+          tlsAuth: false
+          tlsAuthWithCACert: false
+          tlsConfigurationMethod: file-path
+          tlsSkipVerify: true
+        secureJsonData:
+          password: "${DB_PASSWORD}"
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: grafana-dashboards

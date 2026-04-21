@@ -1,0 +1,78 @@
+apiVersion: grafana.integreatly.org/v1beta1
+kind: Grafana
+metadata:
+  name: grafana
+  labels:
+    dashboards: "grafana"
+spec:
+  config:
+    analytics:
+      check_for_updates: "false"
+    log:
+      mode: "console"
+    auth:
+      disable_login_form: "false"
+      disable_signout_menu: "true"
+      signout_redirect_url: "{{ .Values.grafana.keycloak.url }}/auth/realms/{{ .Values.grafana.keycloak.realm }}/protocol/openid-connect/logout?post_logout_redirect_uri=https://grafana.ntrip.k8sdemo.cuddlefish.intern/login&client_id={{ .Values.grafana.keycloak.clientId }}"
+    auth.proxy:
+      enabled: "true"
+      header_name: "X-SUBJECT"
+      header_property: "username"
+      auto_sign_up: "true"
+    auth.generic_oauth:
+      enabled: "true"
+      name: Keycloak
+      allow_sign_up: "true"
+      client_id: {{ .Values.grafana.keycloak.clientId }}
+      client_secret: ${KEYCLOAK_CLIENT_SECRET}
+      scopes: openid email profile roles
+      auth_url: "{{ .Values.grafana.keycloak.url }}/auth/realms/{{ .Values.grafana.keycloak.realm }}/protocol/openid-connect/auth"
+      token_url: "{{ .Values.grafana.keycloak.url }}/auth/realms/{{ .Values.grafana.keycloak.realm }}/protocol/openid-connect/token"
+      api_url: "{{ .Values.grafana.keycloak.url }}/auth/realms/{{ .Values.grafana.keycloak.realm }}/protocol/openid-connect/userinfo"
+      roleAttributePath: "{{ .Values.grafana.keycloak.role_attribute_path }}"
+    server:
+      root_url: {{ .Values.grafana.keycloak.root_url }}
+      serve_from_sub_path: "true"
+    users:
+      allow_sign_up: "false"
+      allow_org_create: "false"
+      editors_can_admin: "true"
+      auto_assign_org: "true"
+      auto_assign_org_role: "Editor"
+    security:
+      allow_embedding: "true"
+      admin_user: "root"
+  deployment:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: grafana
+              image: grafana/grafana:{{ .Values.grafana.image.version }}
+              env:
+                - name: GF_SECURITY_ADMIN_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: grafana-root-admin
+                      key: admin-password
+                - name: KEYCLOAK_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: grafana-keycloak-secret
+                      key: client-secret
+              volumeMounts:
+                - name: grafana-keycloak-ca
+                  mountPath: /etc/ssl/certs/keycloak-ca.crt
+                  subPath: ca.crt
+          volumes:
+            - name: grafana-keycloak-ca
+              secret:
+                secretName: grafana-ntrip-monitor-tls
+  persistentVolumeClaim:
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+      volumeMode: Filesystem

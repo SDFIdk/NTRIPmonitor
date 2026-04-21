@@ -1,0 +1,47 @@
+apiVersion: v1
+data:
+  APPEND_CHECK: {{ .Values.appendCheck | default 0.1 | quote }}
+  CLEAR_CHECK: {{ .Values.clearCheck | default 0.1 | quote }}
+  DB_CPU: {{ .Values.db.cpu | default 1 | quote }}
+  DB_HOST: {{ .Values.timescaledb.name | default "timescaledb" }}-rw
+  DB_MEMORY: {{ .Values.db.memory | default "1GB" | quote }}
+  DB_NAME: {{ .Values.timescaledb.dbName | default "UREGA" | quote }}
+  # DB_PASSWORD: Password commented out need to be added in deployment via secret
+  DB_PORT: {{ .Values.timescaledb.port | default "5432" | quote }}
+  DB_STORE_OBSERVATIONS: {{ .Values.storeObservations | default "True" | quote }}
+  DB_USER: {{ .Values.timescaledb.dbUser | default "postgres" | quote }}
+  FIRST_CASTER_ID: {{ .Values.firstCaster.id | quote }}
+  FIRST_CASTER_MOUNTPOINT: {{ .Values.firstCaster.mountpoint | quote }}
+  FIRST_CASTER_PASSWORD: {{ .Values.firstCaster.password | default .Values.firstCaster.user | quote }}
+  FIRST_CASTER_URL: {{ .Values.firstCaster.url | quote }}
+  FIRST_CASTER_USER: {{ .Values.firstCaster.user | quote }}
+  FOURTH_CASTER_ID: Empty
+  FOURTH_CASTER_MOUNTPOINT: ""
+  FOURTH_CASTER_PASSWORD: ""
+  FOURTH_CASTER_URL: ""
+  FOURTH_CASTER_USER: ""
+  GRAFANA_ENABLE_SMTP: {{ .Values.grafana.enable_smtp | default "false" | quote }}
+  # GRAFANA_PASSWORD: Password
+  GRAFANA_SMTP_HOST: {{ .Values.grafana.smtp_host | quote }}
+  GRAFANA_USER: {{ .Values.grafana.user | default "grafana" | quote }}
+  INGEST_CPU: {{ .Values.ingest.cpu | default 1 | quote }}
+  INGEST_MEMORY: {{ .Values.ingest.memory | default "1GB" | quote }}
+  MAX_READERS: {{ .Values.maxReaders | default "9" | quote }}
+  MULTIPROCESSING_ACTIVE: {{ .Values.multiprocessingActive | default "True" | quote }}
+  NTRIP_DATAMOUNT: {{ .Values.volumeMounts.mountPath | default "Empty" | quote }}
+  NTRIP_DOCKER_REGISTRY: {{ .Values.image.repository | default "ntripmonitor"}}:{{ .Values.image.tag | default "latest" }}
+  READERS_PER_DECODER: {{ .Values.readersPerDecoder | default "1" | quote }}
+  SECOND_CASTER_ID: Empty
+  SECOND_CASTER_MOUNTPOINT: ""
+  SECOND_CASTER_PASSWORD: ""
+  SECOND_CASTER_URL: ""
+  SECOND_CASTER_USER: ""
+  THIRD_CASTER_ID: Empty
+  THIRD_CASTER_MOUNTPOINT: ""
+  THIRD_CASTER_PASSWORD: ""
+  THIRD_CASTER_URL: ""
+  THIRD_CASTER_USER: ""
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: ntripmonitor-env

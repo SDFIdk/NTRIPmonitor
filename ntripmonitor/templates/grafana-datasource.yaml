@@ -1,0 +1,40 @@
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: ntripmonitor-datasource
+  labels:
+    app: grafana
+spec:
+  instanceSelector:
+    matchLabels:
+      dashboards: "grafana"
+  allowCrossNamespaceImport: true
+  datasource:
+    name: {{ .Values.timescaledb.dbName | default "UREGA" }}
+    database: {{ .Values.timescaledb.dbName | default "UREGA" }}
+    type: postgres
+    access: proxy
+    # orgId: 1
+    uid: UYgXEmhnz
+    editable: false
+    url: {{ .Values.timescaledb.name | default "timescaledb" }}-rw:{{ .Values.timescaledb.port | default "5432" }}
+    user: {{ .Values.timescaledb.dbUser | default "postgres" }}
+    isDefault: true
+    jsonData:
+      postgresVersion: 1400
+      sslmode: disable
+      timescaledb: true
+      tlsAuth: false
+      tlsAuthWithCACert: false
+      tlsSkipVerify: true
+    # Secure secrets like passwords are a map within `secureJsonData`.
+    secureJsonData:
+      password: ${password}
+  # This valuesFrom block is for mapping the secret to `secureJsonData` fields.
+  resyncPeriod: 30s
+  valuesFrom:
+    - targetPath: "secureJsonData.password"
+      valueFrom:
+        secretKeyRef:
+          name: "{{ .Values.timescaledb.name }}-app"
+          key: password

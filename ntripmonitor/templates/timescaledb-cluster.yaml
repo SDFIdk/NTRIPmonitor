@@ -1,0 +1,59 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{ .Values.timescaledb.name | default "timescaledb" }}
+spec:
+  imageName: {{ .Values.timescaledb.image.repository | default "ghcr.io/clevyr/cloudnativepg-timescale" }}:{{ .Values.timescaledb.image.tag | default "latest" }}
+
+  instances: 2
+
+  resources:
+    requests:
+      cpu: {{ .Values.timescaledb.resources.requests.cpu | default "1" }}
+      memory: {{ .Values.timescaledb.resources.requests.memory | default "1Gi" }}
+    limits:
+      cpu: {{ .Values.timescaledb.resources.limits.cpu | default "1" }}
+      memory: {{ .Values.timescaledb.resources.limits.memory | default "1Gi" }}
+
+  storage:
+    size: {{ .Values.timescaledb.size | default "1Gi" }}
+    storageClass: {{ .Values.timescaledb.storageClass | default "standard" }}
+
+  postgresql:
+    shared_preload_libraries:
+      - timescaledb
+
+  bootstrap:
+    initdb:
+      database: {{ .Values.timescaledb.dbName }}
+      owner: {{ .Values.timescaledb.dbUser }}
+      postInitTemplateSQL:
+        - CREATE EXTENSION IF NOT EXISTS timescaledb;
+      postInitTemplateSQLRefs:
+        configMapRefs:
+          - name: initdb-scripts
+            key: 01-rtcm_packages.sql
+          - name: initdb-scripts
+            key: 02-coordinates.sql
+          - name: initdb-scripts
+            key: 11-gps_observations.sql
+          - name: initdb-scripts
+            key: 12-glonass_observations.sql
+          - name: initdb-scripts
+            key: 13-galileo_observations.sql
+          - name: initdb-scripts
+            key: 14-beidou_observations.sql
+          - name: initdb-scripts
+            key: 15-qzss_observations.sql
+          - name: initdb-scripts
+            key: 16-sbas_observations.sql
+          - name: initdb-scripts
+            key: 20-sourcetable_constants.sql
+          - name: initdb-scripts
+            key: 30-connection_logger.sql
+          - name: initdb-scripts
+            key: 99-stored_procedures.sql
+  
+  # requires super user access to run the initdb scripts
+  enableSuperuserAccess: true
+  enablePDB: true

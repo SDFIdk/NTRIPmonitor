@@ -1,0 +1,290 @@
+apiVersion: v1
+data:
+  01-rtcm_packages.sql: |+
+    CREATE TABLE IF NOT EXISTS rtcm_packages (
+        rtcm_package_id BIGSERIAL,
+        receive_time TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+        mountpoint VARCHAR(50),
+        rtcm_obs_epoch TIMESTAMP WITH TIME ZONE,
+        rtcm_msg_type SMALLINT NOT NULL,
+        rtcm_msg_size INTEGER,
+        rtcm_sat_count SMALLINT
+    );
+
+    SELECT create_hypertable('rtcm_packages', 'receive_time', 'mountpoint', 2);
+    CREATE INDEX ON rtcm_packages(mountpoint, rtcm_msg_type, receive_time DESC);
+    CREATE INDEX ON rtcm_packages(mountpoint, rtcm_msg_type, receive_time, rtcm_obs_epoch DESC);
+    CREATE INDEX ON rtcm_packages(rtcm_package_id DESC);
+
+    SELECT drop_chunks('rtcm_packages', older_than => INTERVAL '{{ .Values.timescaledb.retentionPolicy }}');
+    SELECT add_retention_policy('rtcm_packages', INTERVAL '{{ .Values.timescaledb.retentionPolicy }}');
+
+  02-coordinates.sql: |
+    CREATE TABLE IF NOT EXISTS coordinates (
+        obs_id BIGSERIAL,
+        rtcm_package_id BIGSERIAL,
+        rtcm_msg_type SMALLINT NOT NULL,
+        mountpoint VARCHAR(50) UNIQUE,
+        ecef_x NUMERIC(10, 3),
+        ecef_y NUMERIC(10, 3),
+        ecef_z NUMERIC(10, 3),
+        antHgt NUMERIC(10, 3)
+    );
+  11-gps_observations.sql: |
+    CREATE TABLE IF NOT EXISTS gps_observations (
+        obs_id BIGSERIAL,
+        rtcm_package_id  BIGSERIAL,
+        obs_epoch TIMESTAMP WITH TIME ZONE NOT NULL,
+        rtcm_msg_type SMALLINT NOT NULL,
+        mountpoint VARCHAR(50),
+        sat_id CHAR(4),
+        sat_signal CHAR(3),
+        obs_code NUMERIC(13, 10),
+        obs_phase NUMERIC(14, 11),
+        obs_doppler NUMERIC(8, 4),
+        obs_snr NUMERIC(6, 4),
+        obs_lock_time_indicator INTEGER
+    );
+
+    SELECT create_hypertable('gps_observations', 'obs_epoch', 'mountpoint', 2);
+    CREATE INDEX ON gps_observations(mountpoint, sat_id, sat_signal, obs_epoch DESC);
+    CREATE INDEX ON gps_observations(mountpoint, rtcm_msg_type, obs_epoch DESC);
+
+    SELECT drop_chunks('gps_observations', older_than => INTERVAL '{{ .Values.timescaledb.retentionPolicy }}');
+    SELECT add_retention_policy('gps_observations', INTERVAL '{{ .Values.timescaledb.retentionPolicy }}');
+  12-glonass_observations.sql: |
+    CREATE TABLE IF NOT EXISTS glonass_observations (
+        obs_id BIGSERIAL,
+        rtcm_package_id  BIGSERIAL,
+        obs_epoch TIMESTAMP WITH TIME ZONE NOT NULL,
+        rtcm_msg_type SMALLINT NOT NULL,
+        mountpoint VARCHAR(50),
+        sat_id CHAR(4),
+        sat_signal CHAR(3),
+        obs_code NUMERIC(13, 10),
+        obs_phase NUMERIC(14, 11),
+        obs_doppler NUMERIC(8, 4),
+        obs_snr NUMERIC(6, 4),
+        obs_lock_time_indicator INTEGER
+    );
+
+    SELECT create_hypertable('glonass_observations', 'obs_epoch', 'mountpoint', 2);
+    CREATE INDEX ON glonass_observations(mountpoint, sat_id, sat_signal, obs_epoch DESC);
+    CREATE INDEX ON glonass_observations(mountpoint, rtcm_msg_type, obs_epoch DESC);
+
+    SELECT drop_chunks('glonass_observations', older_than => INTERVAL '{{ .Values.timescaledb.retentionPolicy }}');
+    SELECT add_retention_policy('glonass_observations', INTERVAL '{{ .Values.timescaledb.retentionPolicy }}');
+  13-galileo_observations.sql: |
+    CREATE TABLE IF NOT EXISTS galileo_observations (
+        obs_id BIGSERIAL,
+        rtcm_package_id  BIGSERIAL,
+        obs_epoch TIMESTAMP WITH TIME ZONE NOT NULL,
+        rtcm_msg_type SMALLINT NOT NULL,
+        mountpoint VARCHAR(50),
+        sat_id CHAR(4),
+        sat_signal CHAR(3),
+        obs_code NUMERIC(13, 10),
+        obs_phase NUMERIC(14, 11),
+        obs_doppler NUMERIC(8, 4),
+        obs_snr NUMERIC(6, 4),
+        obs_lock_time_indicator INTEGER
+    );
+
+    SELECT create_hypertable('galileo_observations', 'obs_epoch', 'mountpoint', 2);
+    CREATE INDEX ON galileo_observations(mountpoint, sat_id, sat_signal, obs_epoch DESC);
+    CREATE INDEX ON galileo_observations(mountpoint, rtcm_msg_type, obs_epoch DESC);
+
+    SELECT drop_chunks('galileo_observations', older_than => INTERVAL '{{ .Values.timescaledb.retentionPolicy }}');
+    SELECT add_retention_policy('galileo_observations', INTERVAL '{{ .Values.timescaledb.retentionPolicy }}');
+  14-beidou_observations.sql: |
+    CREATE TABLE IF NOT EXISTS beidou_observations (
+        obs_id BIGSERIAL,
+        rtcm_package_id  BIGSERIAL,
+        obs_epoch TIMESTAMP WITH TIME ZONE NOT NULL,
+        rtcm_msg_type SMALLINT NOT NULL,
+        mountpoint VARCHAR(50),
+        sat_id CHAR(4),
+        sat_signal CHAR(3),
+        obs_code NUMERIC(13, 10),
+        obs_phase NUMERIC(14, 11),
+        obs_doppler NUMERIC(8, 4),
+        obs_snr NUMERIC(6, 4),
+        obs_lock_time_indicator INTEGER
+    );
+
+    SELECT create_hypertable('beidou_observations', 'obs_epoch', 'mountpoint', 2);
+    CREATE INDEX ON beidou_observations(mountpoint, sat_id, sat_signal, obs_epoch DESC);
+    CREATE INDEX ON beidou_observations(mountpoint, rtcm_msg_type, obs_epoch DESC);
+
+    SELECT drop_chunks('beidou_observations', older_than => INTERVAL '{{ .Values.timescaledb.retentionPolicy }}');
+    SELECT add_retention_policy('beidou_observations', INTERVAL '{{ .Values.timescaledb.retentionPolicy }}');
+  15-qzss_observations.sql: |
+    CREATE TABLE IF NOT EXISTS qzss_observations (
+        obs_id BIGSERIAL,
+        rtcm_package_id  BIGSERIAL,
+        obs_epoch TIMESTAMP WITH TIME ZONE NOT NULL,
+        rtcm_msg_type SMALLINT NOT NULL,
+        mountpoint VARCHAR(50),
+        sat_id CHAR(4),
+        sat_signal CHAR(3),
+        obs_code NUMERIC(13, 10),
+        obs_phase NUMERIC(14, 11),
+        obs_doppler NUMERIC(8, 4),
+        obs_snr NUMERIC(6, 4),
+        obs_lock_time_indicator INTEGER
+    );
+
+    SELECT create_hypertable('qzss_observations', 'obs_epoch', 'mountpoint', 2);
+    CREATE INDEX ON qzss_observations(mountpoint, sat_id, sat_signal, obs_epoch DESC);
+    CREATE INDEX ON qzss_observations(mountpoint, rtcm_msg_type, obs_epoch DESC);
+
+    SELECT drop_chunks('qzss_observations', older_than => INTERVAL '{{ .Values.timescaledb.retentionPolicy }}');
+    SELECT add_retention_policy('qzss_observations', INTERVAL '{{ .Values.timescaledb.retentionPolicy }}');
+  16-sbas_observations.sql: |
+    CREATE TABLE IF NOT EXISTS sbas_observations (
+        obs_id BIGSERIAL,
+        rtcm_package_id  BIGSERIAL,
+        obs_epoch TIMESTAMP WITH TIME ZONE NOT NULL,
+        rtcm_msg_type SMALLINT NOT NULL,
+        mountpoint VARCHAR(50),
+        sat_id CHAR(4),
+        sat_signal CHAR(3),
+        obs_code NUMERIC(13, 10),
+        obs_phase NUMERIC(14, 11),
+        obs_doppler NUMERIC(8, 4),
+        obs_snr NUMERIC(6, 4),
+        obs_lock_time_indicator INTEGER
+    );
+
+    SELECT create_hypertable('sbas_observations', 'obs_epoch', 'mountpoint', 2);
+    CREATE INDEX ON sbas_observations(mountpoint, sat_id, sat_signal, obs_epoch DESC);
+    CREATE INDEX ON sbas_observations(mountpoint, rtcm_msg_type, obs_epoch DESC);
+
+    SELECT drop_chunks('sbas_observations', older_than => INTERVAL '{{ .Values.timescaledb.retentionPolicy }}');
+    SELECT add_retention_policy('sbas_observations', INTERVAL '{{ .Values.timescaledb.retentionPolicy }}');
+  20-sourcetable_constants.sql: |-
+    CREATE TABLE IF NOT EXISTS sourcetable_constants (
+        mountpoint_id SERIAL,
+        mountpoint VARCHAR(50),
+        casterprovider VARCHAR(50),
+        city VARCHAR(50),
+        rtcmver VARCHAR(50),
+        countrycode VARCHAR(50),
+        latitude DECIMAL(7,4),
+        longitude DECIMAL(7,4),
+        receiver VARCHAR(50),
+        UNIQUE (mountpoint, countrycode, casterprovider)
+    );
+
+    CREATE INDEX ON sourcetable_constants(mountpoint, countrycode, casterprovider DESC);
+    CREATE INDEX ON sourcetable_constants(mountpoint_id DESC);
+  30-connection_logger.sql: |-
+    CREATE TABLE IF NOT EXISTS connection_logger (
+        id SERIAL PRIMARY KEY,
+        mountpoint VARCHAR(50),
+        disconnect_time TIMESTAMP WITHOUT TIME ZONE,
+        reconnect_time TIMESTAMP WITHOUT TIME ZONE
+    );
+  99-stored_procedures.sql: "CREATE OR REPLACE FUNCTION public.insert_rtcm_packages(decodedframes
+    json, OUT rtcmpackageids bigint[])\n RETURNS bigint[]\n LANGUAGE plpgsql\nAS $$\nBEGIN\n
+    \   -- Insert into rtcm_packages and get the IDs\n    WITH ins AS (\n        INSERT
+    INTO rtcm_packages (mountpoint, receive_time, rtcm_obs_epoch, rtcm_msg_type, rtcm_msg_size,
+    rtcm_sat_count)\n        SELECT (json_array_elements->>0)::text, \n               (json_array_elements->>1)::timestamp
+    without time zone, \n               (json_array_elements->>2)::timestamp with
+    time zone, \n               (json_array_elements->>3)::integer, \n               (json_array_elements->>4)::integer,
+    \n               (json_array_elements->>5)::integer\n        FROM json_array_elements(decodedFrames)
+    \n        RETURNING rtcm_package_id\n    )\n    SELECT array_agg(rtcm_package_id)
+    FROM ins INTO rtcmPackageIds;\nEND;\n$$;\n\nCREATE OR REPLACE FUNCTION public.insert_galileo_observations(decodedObsFrame
+    json)\n RETURNS VOID\n LANGUAGE plpgsql\nAS $$\nBEGIN\n    INSERT INTO galileo_observations\n
+    \   (rtcm_package_id, mountpoint, obs_epoch, rtcm_msg_type, sat_id, sat_signal,
+    obs_code, obs_phase, obs_doppler, obs_snr, obs_lock_time_indicator)\n    SELECT
+    (json_array_elements->>0)::bigint, \n           (json_array_elements->>1)::text,
+    \n           (json_array_elements->>2)::timestamp with time zone, \n           (json_array_elements->>3)::smallint,
+    \n           (json_array_elements->>4)::char(4), \n           (json_array_elements->>5)::char(3),
+    \n           (json_array_elements->>6)::numeric(13, 10), \n           (json_array_elements->>7)::numeric(14,
+    11), \n           (json_array_elements->>8)::numeric(8, 4), \n           (json_array_elements->>9)::numeric(6,
+    4), \n           (json_array_elements->>10)::integer\n    FROM json_array_elements(decodedObsFrame);\nEND;\n$$;\n\nCREATE
+    OR REPLACE FUNCTION public.insert_gps_observations(decodedObsFrame json)\n RETURNS
+    VOID\n LANGUAGE plpgsql\nAS $$\nBEGIN\n    INSERT INTO gps_observations\n    (rtcm_package_id,
+    mountpoint, obs_epoch, rtcm_msg_type, sat_id, sat_signal, obs_code, obs_phase,
+    obs_doppler, obs_snr, obs_lock_time_indicator)\n    SELECT (json_array_elements->>0)::bigint,
+    \n           (json_array_elements->>1)::text, \n           (json_array_elements->>2)::timestamp
+    with time zone, \n           (json_array_elements->>3)::smallint, \n           (json_array_elements->>4)::char(4),
+    \n           (json_array_elements->>5)::char(3), \n           (json_array_elements->>6)::numeric(13,
+    10), \n           (json_array_elements->>7)::numeric(14, 11), \n           (json_array_elements->>8)::numeric(8,
+    4), \n           (json_array_elements->>9)::numeric(6, 4), \n           (json_array_elements->>10)::integer\n
+    \   FROM json_array_elements(decodedObsFrame);\nEND;\n$$;\n\nCREATE OR REPLACE
+    FUNCTION public.insert_glonass_observations(decodedObsFrame json)\n RETURNS VOID\n
+    LANGUAGE plpgsql\nAS $$\nBEGIN\n    INSERT INTO glonass_observations\n    (rtcm_package_id,
+    mountpoint, obs_epoch, rtcm_msg_type, sat_id, sat_signal, obs_code, obs_phase,
+    obs_doppler, obs_snr, obs_lock_time_indicator)\n    SELECT (json_array_elements->>0)::bigint,
+    \n           (json_array_elements->>1)::text, \n           (json_array_elements->>2)::timestamp
+    with time zone, \n           (json_array_elements->>3)::smallint, \n           (json_array_elements->>4)::char(4),
+    \n           (json_array_elements->>5)::char(3), \n           (json_array_elements->>6)::numeric(13,
+    10), \n           (json_array_elements->>7)::numeric(14, 11), \n           (json_array_elements->>8)::numeric(8,
+    4), \n           (json_array_elements->>9)::numeric(6, 4), \n           (json_array_elements->>10)::integer\n
+    \   FROM json_array_elements(decodedObsFrame);\nEND;\n$$;\n\nCREATE OR REPLACE
+    FUNCTION public.insert_beidou_observations(decodedObsFrame json)\n RETURNS VOID\n
+    LANGUAGE plpgsql\nAS $$\nBEGIN\n    INSERT INTO beidou_observations\n    (rtcm_package_id,
+    mountpoint, obs_epoch, rtcm_msg_type, sat_id, sat_signal, obs_code, obs_phase,
+    obs_doppler, obs_snr, obs_lock_time_indicator)\n    SELECT (json_array_elements->>0)::bigint,
+    \n           (json_array_elements->>1)::text, \n           (json_array_elements->>2)::timestamp
+    with time zone, \n           (json_array_elements->>3)::smallint, \n           (json_array_elements->>4)::char(4),
+    \n           (json_array_elements->>5)::char(3), \n           (json_array_elements->>6)::numeric(13,
+    10), \n           (json_array_elements->>7)::numeric(14, 11), \n           (json_array_elements->>8)::numeric(8,
+    4), \n           (json_array_elements->>9)::numeric(6, 4), \n           (json_array_elements->>10)::integer\n
+    \   FROM json_array_elements(decodedObsFrame);\nEND;\n$$;\n\nCREATE OR REPLACE
+    FUNCTION public.insert_qzss_observations(decodedObsFrame json)\n RETURNS VOID\n
+    LANGUAGE plpgsql\nAS $$\nBEGIN\n    INSERT INTO qzss_observations\n    (rtcm_package_id,
+    mountpoint, obs_epoch, rtcm_msg_type, sat_id, sat_signal, obs_code, obs_phase,
+    obs_doppler, obs_snr, obs_lock_time_indicator)\n    SELECT (json_array_elements->>0)::bigint,
+    \n           (json_array_elements->>1)::text, \n           (json_array_elements->>2)::timestamp
+    with time zone, \n           (json_array_elements->>3)::smallint, \n           (json_array_elements->>4)::char(4),
+    \n           (json_array_elements->>5)::char(3), \n           (json_array_elements->>6)::numeric(13,
+    10), \n           (json_array_elements->>7)::numeric(14, 11), \n           (json_array_elements->>8)::numeric(8,
+    4), \n           (json_array_elements->>9)::numeric(6, 4), \n           (json_array_elements->>10)::integer\n
+    \   FROM json_array_elements(decodedObsFrame);\nEND;\n$$;\n\nCREATE OR REPLACE
+    FUNCTION public.insert_sbas_observations(decodedObsFrame json)\n RETURNS VOID\n
+    LANGUAGE plpgsql\nAS $$\nBEGIN\n    INSERT INTO sbas_observations\n    (rtcm_package_id,
+    mountpoint, obs_epoch, rtcm_msg_type, sat_id, sat_signal, obs_code, obs_phase,
+    obs_doppler, obs_snr, obs_lock_time_indicator)\n    SELECT (json_array_elements->>0)::bigint,
+    \n           (json_array_elements->>1)::text, \n           (json_array_elements->>2)::timestamp
+    with time zone, \n           (json_array_elements->>3)::smallint, \n           (json_array_elements->>4)::char(4),
+    \n           (json_array_elements->>5)::char(3), \n           (json_array_elements->>6)::numeric(13,
+    10), \n           (json_array_elements->>7)::numeric(14, 11), \n           (json_array_elements->>8)::numeric(8,
+    4), \n           (json_array_elements->>9)::numeric(6, 4), \n           (json_array_elements->>10)::integer\n
+    \   FROM json_array_elements(decodedObsFrame);\nEND;\n$$;\n\nCREATE OR REPLACE
+    FUNCTION public.insert_sourcetable_constants(mountpointTable json)\n RETURNS VOID\n
+    LANGUAGE plpgsql\nAS $$\nBEGIN\n    INSERT INTO sourcetable_constants\n    (mountpoint,
+    casterprovider, city, rtcmver, countrycode, latitude, longitude, receiver)\n    SELECT
+    (json_array_elements->>0)::text, \n           (json_array_elements->>1)::text,
+    \n           (json_array_elements->>2)::text, \n           (json_array_elements->>3)::text,
+    \n           (json_array_elements->>4)::text, \n           (json_array_elements->>5)::decimal(7,4),
+    \n           (json_array_elements->>6)::decimal(7,4), \n           (json_array_elements->>7)::text\n
+    \   FROM json_array_elements(mountpointTable)\n    ON CONFLICT (mountpoint, countrycode,
+    casterprovider)\n    DO UPDATE SET \n        city = EXCLUDED.city, \n        rtcmver
+    = EXCLUDED.rtcmver, \n        latitude = EXCLUDED.latitude, \n        longitude
+    = EXCLUDED.longitude, \n        receiver = EXCLUDED.receiver;\nEND;\n$$;\n\nCREATE
+    OR REPLACE FUNCTION public.insert_disconnect_log(logData json, OUT disconnectlogid
+    int)\nRETURNS int\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    -- Insert into connection_logger
+    and get the ID\n    INSERT INTO connection_logger (mountpoint, disconnect_time)\n
+    \   VALUES (\n        (logData->>0)::text, \n        (logData->>1)::timestamp
+    without time zone\n    )\n    RETURNING id INTO disconnectlogid;\nEND;\n$$;\n\nCREATE
+    OR REPLACE FUNCTION public.update_reconnect_log(logData json)\nRETURNS VOID\nLANGUAGE
+    plpgsql\nAS $$\nBEGIN\n    -- Update reconnect_time in connection_logger\n    UPDATE
+    connection_logger\n    SET reconnect_time = (logData->>1)::timestamp without time
+    zone\n    WHERE id = (logData->>0)::int;\n    RETURN;\nEND;\n$$;\n\nCREATE OR
+    REPLACE FUNCTION public.upsert_coordinates(decodedObsFrame json)\n RETURNS VOID\n
+    LANGUAGE plpgsql\nAS $$\nBEGIN\n    INSERT INTO coordinates\n    (rtcm_package_id,
+    rtcm_msg_type, mountpoint, ecef_x, ecef_y, ecef_z, antHgt)\n    SELECT (json_array_elements->>0)::bigint,
+    \n           (json_array_elements->>1)::smallint, \n           (json_array_elements->>2)::text,
+    \n           (json_array_elements->>3)::numeric(10, 3),\n           (json_array_elements->>4)::numeric(10,
+    3),\n           (json_array_elements->>5)::numeric(10, 3),\n           (json_array_elements->>6)::numeric(10,
+    3)\n    FROM json_array_elements(decodedObsFrame)\n    ON CONFLICT (mountpoint)
+    DO UPDATE SET\n        rtcm_package_id = EXCLUDED.rtcm_package_id,\n        rtcm_msg_type
+    = EXCLUDED.rtcm_msg_type,\n        ecef_x = EXCLUDED.ecef_x,\n        ecef_y =
+    EXCLUDED.ecef_y,\n        ecef_z = EXCLUDED.ecef_z,\n        antHgt = EXCLUDED.antHgt;\nEND;\n$$;"
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: initdb-scripts
